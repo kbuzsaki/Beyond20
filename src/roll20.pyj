@@ -205,6 +205,12 @@ def template5eCommunity(request):
             return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack")
         elif is_item:
             return request["item-type"]
+        elif is_hit_die:
+            return request["class"]
+        elif "proficiency" in request:
+            return request["proficiency"].replace("Proficiency", "Proficient")
+        elif "source" in request:
+            return join(", ", [el for el in [request["source"], request["source-type"]] if el])
         else:
             return ""
 
@@ -267,8 +273,8 @@ def template5eCommunity(request):
             segment("roll", macro(request["roll"])),
         ]
 
-    def get_item_segments(request):
-        if not is_item:
+    def get_description_segments(request):
+        if is_attack or is_spell or "description" not in request:
             return []
         return [
             segment("freetextname", "Description"),
@@ -330,8 +336,8 @@ def template5eCommunity(request):
         return segments
 
     segments = []
-    for f in [get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments, get_item_segments,
-            get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments]:
+    for f in [get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments,
+            get_description_segments, get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments]:
         for s in f(request):
             segments.append(s)
 

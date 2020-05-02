@@ -7425,6 +7425,22 @@ var str = ρσ_str, repr = ρσ_repr;;
                     return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack");
                 } else if (is_item) {
                     return request["item-type"];
+                } else if (is_hit_die) {
+                    return request["class"];
+                } else if (ρσ_in("proficiency", request)) {
+                    return request["proficiency"].replace("Proficiency", "Proficient");
+                } else if (ρσ_in("source", request)) {
+                    return join(", ", (function() {
+                        var ρσ_Iter = ρσ_Iterable(ρσ_list_decorate([ request["source"], request["source-type"] ])), ρσ_Result = [], el;
+                        for (var ρσ_Index = 0; ρσ_Index < ρσ_Iter.length; ρσ_Index++) {
+                            el = ρσ_Iter[ρσ_Index];
+                            if (el) {
+                                ρσ_Result.push(el);
+                            }
+                        }
+                        ρσ_Result = ρσ_list_constructor(ρσ_Result);
+                        return ρσ_Result;
+                    })());
                 } else {
                     return "";
                 }
@@ -7505,13 +7521,13 @@ var str = ρσ_str, repr = ρσ_repr;;
                 __argnames__ : {value: ["request"]}
             });
 
-            function get_item_segments(request) {
-                if (!is_item) {
+            function get_description_segments(request) {
+                if (is_attack || is_spell || !ρσ_in("description", request)) {
                     return ρσ_list_decorate([]);
                 }
                 return ρσ_list_decorate([ segment("freetextname", "Description"), segment("freetext", request["description"]) ]);
             };
-            if (!get_item_segments.__argnames__) Object.defineProperties(get_item_segments, {
+            if (!get_description_segments.__argnames__) Object.defineProperties(get_description_segments, {
                 __argnames__ : {value: ["request"]}
             });
 
@@ -7567,7 +7583,7 @@ var str = ρσ_str, repr = ρσ_repr;;
             });
 
             segments = ρσ_list_decorate([]);
-            var ρσ_Iter3 = ρσ_Iterable(ρσ_list_decorate([ get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments, get_item_segments, get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments ]));
+            var ρσ_Iter3 = ρσ_Iterable(ρσ_list_decorate([ get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments, get_description_segments, get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments ]));
             for (var ρσ_Index3 = 0; ρσ_Index3 < ρσ_Iter3.length; ρσ_Index3++) {
                 f = ρσ_Iter3[ρσ_Index3];
                 var ρσ_Iter4 = ρσ_Iterable(f(request));
