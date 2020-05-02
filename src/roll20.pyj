@@ -155,14 +155,15 @@ def templateAction(request, name, properties):
         print("ERROR, unrecognized template type: ", template_type)
 
 def template5eCommunity(request):
-    is_spell = request["type"] == "spell-attack"
-    is_attack = request["type"] == "attack"
-    is_save = request["type"] == "saving-throw"
-    is_ability = request["type"] == "ability"
-    is_skill = request["type"] == "skill"
-    is_hit_die = request["type"] == "hit-dice"
-    is_custom = request["type"] == "custom"
-    is_initiative = request["type"] == "initiative"
+    rtype = request["type"]
+    is_spell = rtype == "spell-attack" or rtype == "spell-card"
+    is_attack = rtype == "attack"
+    is_save = rtype == "saving-throw"
+    is_ability = rtype == "ability"
+    is_skill = rtype == "skill"
+    is_hit_die = rtype == "hit-dice"
+    is_custom = rtype == "custom"
+    is_initiative = rtype == "initiative"
 
     def join(sep, els):
         s = ""
@@ -300,17 +301,18 @@ def template5eCommunity(request):
                 segment("spellsavestat", request["save-ability"]),
                 segment("spellsavesuccess", "See description."),
             ])
-        segments.extend([
-            bool_seg("spellshowdamage", True),
-            segment("spelldamage", get_primary_damage(request)),
-        ])
+        if "damages" in request:
+            segments.extend([
+                bool_seg("spellshowdamage", True),
+                segment("spelldamage", get_primary_damage(request)),
+            ])
         if "critical-damages" in request:
             segments.extend([
                 bool_seg("spellcancrit", True),
                 segment("spellcritdamage", get_primary_crit_damage(request)),
             ])
         segments.append(bool_seg("spellshoweffects", True))
-        if len(request["damages"]) > 1:
+        if "damages" in request and len(request["damages"]) > 1:
             segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + request["description"]))
         else:
             segments.append(opt_segment("spelleffect", request["description"]))

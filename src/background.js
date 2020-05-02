@@ -5544,6 +5544,9 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function cleanRoll(rollText) {
+            if ((rollText === 0 || typeof rollText === "object" && ρσ_equals(rollText, 0))) {
+                return 0;
+            }
             rollText = rollText.replace(/\+ \+/g, "+").replace(/\+ \-/g, "-");
             return rollText;
         };

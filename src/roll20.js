@@ -5510,6 +5510,9 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function cleanRoll(rollText) {
+            if ((rollText === 0 || typeof rollText === "object" && ρσ_equals(rollText, 0))) {
+                return 0;
+            }
             rollText = rollText.replace(/\+ \+/g, "+").replace(/\+ \-/g, "-");
             return rollText;
         };
@@ -7286,15 +7289,16 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function template5eCommunity(request) {
-            var is_spell, is_attack, is_save, is_ability, is_skill, is_hit_die, is_custom, is_initiative, segments, s, f;
-            is_spell = (request["type"] === "spell-attack" || typeof request["type"] === "object" && ρσ_equals(request["type"], "spell-attack"));
-            is_attack = (request["type"] === "attack" || typeof request["type"] === "object" && ρσ_equals(request["type"], "attack"));
-            is_save = (request["type"] === "saving-throw" || typeof request["type"] === "object" && ρσ_equals(request["type"], "saving-throw"));
-            is_ability = (request["type"] === "ability" || typeof request["type"] === "object" && ρσ_equals(request["type"], "ability"));
-            is_skill = (request["type"] === "skill" || typeof request["type"] === "object" && ρσ_equals(request["type"], "skill"));
-            is_hit_die = (request["type"] === "hit-dice" || typeof request["type"] === "object" && ρσ_equals(request["type"], "hit-dice"));
-            is_custom = (request["type"] === "custom" || typeof request["type"] === "object" && ρσ_equals(request["type"], "custom"));
-            is_initiative = (request["type"] === "initiative" || typeof request["type"] === "object" && ρσ_equals(request["type"], "initiative"));
+            var rtype, is_spell, is_attack, is_save, is_ability, is_skill, is_hit_die, is_custom, is_initiative, segments, s, f;
+            rtype = request["type"];
+            is_spell = (rtype === "spell-attack" || typeof rtype === "object" && ρσ_equals(rtype, "spell-attack")) || (rtype === "spell-card" || typeof rtype === "object" && ρσ_equals(rtype, "spell-card"));
+            is_attack = (rtype === "attack" || typeof rtype === "object" && ρσ_equals(rtype, "attack"));
+            is_save = (rtype === "saving-throw" || typeof rtype === "object" && ρσ_equals(rtype, "saving-throw"));
+            is_ability = (rtype === "ability" || typeof rtype === "object" && ρσ_equals(rtype, "ability"));
+            is_skill = (rtype === "skill" || typeof rtype === "object" && ρσ_equals(rtype, "skill"));
+            is_hit_die = (rtype === "hit-dice" || typeof rtype === "object" && ρσ_equals(rtype, "hit-dice"));
+            is_custom = (rtype === "custom" || typeof rtype === "object" && ρσ_equals(rtype, "custom"));
+            is_initiative = (rtype === "initiative" || typeof rtype === "object" && ρσ_equals(rtype, "initiative"));
             function join(sep, els) {
                 var s, i;
                 s = "";
@@ -7526,12 +7530,14 @@ var str = ρσ_str, repr = ρσ_repr;;
                 if (ρσ_in("save-dc", request)) {
                     segments.extend(ρσ_list_decorate([ bool_seg("spellshowsavethrow", true), segment("spellsavedc", macro(request["save-dc"])), segment("spellsavestat", request["save-ability"]), segment("spellsavesuccess", "See description.") ]));
                 }
-                segments.extend(ρσ_list_decorate([ bool_seg("spellshowdamage", true), segment("spelldamage", get_primary_damage(request)) ]));
+                if (ρσ_in("damages", request)) {
+                    segments.extend(ρσ_list_decorate([ bool_seg("spellshowdamage", true), segment("spelldamage", get_primary_damage(request)) ]));
+                }
                 if (ρσ_in("critical-damages", request)) {
                     segments.extend(ρσ_list_decorate([ bool_seg("spellcancrit", true), segment("spellcritdamage", get_primary_crit_damage(request)) ]));
                 }
                 segments.append(bool_seg("spellshoweffects", true));
-                if (len(request["damages"]) > 1) {
+                if (ρσ_in("damages", request) && len(request["damages"]) > 1) {
                     segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + request["description"]));
                 } else {
                     segments.append(opt_segment("spelleffect", request["description"]));

@@ -21,6 +21,8 @@ def replaceRolls(text, replaceCB):
 
 # Used to clean various imperfections in dice roll strings
 def cleanRoll(rollText):
+    if rollText == 0:
+        return 0
     #clean adjacent '+'s (Roll20 treats it as a d20)
     #eg: (1d10 + + 2 + 3) -> (1d10 + 2 + 3)
     rollText = rollText.replace(/\+ \+/g, '+').replace(/\+ \-/g, '-')
