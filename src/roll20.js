@@ -7289,7 +7289,7 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function template5eCommunity(request) {
-            var rtype, is_spell, is_attack, is_save, is_ability, is_skill, is_hit_die, is_custom, is_initiative, segments, s, f;
+            var rtype, is_spell, is_attack, is_save, is_ability, is_skill, is_hit_die, is_custom, is_initiative, is_item, segments, s, f;
             rtype = request["type"];
             is_spell = (rtype === "spell-attack" || typeof rtype === "object" && ρσ_equals(rtype, "spell-attack")) || (rtype === "spell-card" || typeof rtype === "object" && ρσ_equals(rtype, "spell-card"));
             is_attack = (rtype === "attack" || typeof rtype === "object" && ρσ_equals(rtype, "attack"));
@@ -7299,6 +7299,7 @@ var str = ρσ_str, repr = ρσ_repr;;
             is_hit_die = (rtype === "hit-dice" || typeof rtype === "object" && ρσ_equals(rtype, "hit-dice"));
             is_custom = (rtype === "custom" || typeof rtype === "object" && ρσ_equals(rtype, "custom"));
             is_initiative = (rtype === "initiative" || typeof rtype === "object" && ρσ_equals(rtype, "initiative"));
+            is_item = (rtype === "item" || typeof rtype === "object" && ρσ_equals(rtype, "item"));
             function join(sep, els) {
                 var s, i;
                 s = "";
@@ -7502,6 +7503,16 @@ var str = ρσ_str, repr = ρσ_repr;;
                 __argnames__ : {value: ["request"]}
             });
 
+            function get_item_segments(request) {
+                if (!is_item) {
+                    return ρσ_list_decorate([]);
+                }
+                return ρσ_list_decorate([ segment("freetextname", "Description"), segment("freetext", request["description"]) ]);
+            };
+            if (!get_item_segments.__argnames__) Object.defineProperties(get_item_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
             function get_attack_segments(request) {
                 var segs;
                 if (!is_attack) {
@@ -7549,7 +7560,7 @@ var str = ρσ_str, repr = ρσ_repr;;
             });
 
             segments = ρσ_list_decorate([]);
-            var ρσ_Iter3 = ρσ_Iterable(ρσ_list_decorate([ get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments, get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments ]));
+            var ρσ_Iter3 = ρσ_Iterable(ρσ_list_decorate([ get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments, get_item_segments, get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments ]));
             for (var ρσ_Index3 = 0; ρσ_Index3 < ρσ_Iter3.length; ρσ_Index3++) {
                 f = ρσ_Iter3[ρσ_Index3];
                 var ρσ_Iter4 = ρσ_Iterable(f(request));

@@ -164,6 +164,7 @@ def template5eCommunity(request):
     is_hit_die = rtype == "hit-dice"
     is_custom = rtype == "custom"
     is_initiative = rtype == "initiative"
+    is_item = rtype == "item"
 
     def join(sep, els):
         s = ""
@@ -264,6 +265,14 @@ def template5eCommunity(request):
             segment("roll", macro(request["roll"])),
         ]
 
+    def get_item_segments(request):
+        if not is_item:
+            return []
+        return [
+            segment("freetextname", "Description"),
+            segment("freetext", request["description"]),
+        ]
+
     def get_attack_segments(request):
         if not is_attack:
             return []
@@ -319,7 +328,7 @@ def template5eCommunity(request):
         return segments
 
     segments = []
-    for f in [get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments,
+    for f in [get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments, get_item_segments,
             get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments]:
         for s in f(request):
             segments.append(s)
