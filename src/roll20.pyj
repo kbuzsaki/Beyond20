@@ -298,7 +298,7 @@ def template5eCommunity(request):
                 bool_seg("spellshowsavethrow", True),
                 segment("spellsavedc", macro(request["save-dc"])),
                 segment("spellsavestat", request["save-ability"]),
-                segment("spellsavesuccess", "Who knows?"),
+                segment("spellsavesuccess", "See description."),
             ])
         segments.extend([
             bool_seg("spellshowdamage", True),

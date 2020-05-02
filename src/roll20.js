@@ -7524,7 +7524,7 @@ var str = ρσ_str, repr = ρσ_repr;;
                     segments.extend(ρσ_list_decorate([ bool_seg("spellshowattack", true), segment("spellattack", get_attack(request)), bool_seg("spellshowattackadv", true), segment("spellattackadv", get_attack(request)) ]));
                 }
                 if (ρσ_in("save-dc", request)) {
-                    segments.extend(ρσ_list_decorate([ bool_seg("spellshowsavethrow", true), segment("spellsavedc", macro(request["save-dc"])), segment("spellsavestat", request["save-ability"]), segment("spellsavesuccess", "Who knows?") ]));
+                    segments.extend(ρσ_list_decorate([ bool_seg("spellshowsavethrow", true), segment("spellsavedc", macro(request["save-dc"])), segment("spellsavestat", request["save-ability"]), segment("spellsavesuccess", "See description.") ]));
                 }
                 segments.extend(ρσ_list_decorate([ bool_seg("spellshowdamage", true), segment("spelldamage", get_primary_damage(request)) ]));
                 if (ρσ_in("critical-damages", request)) {
