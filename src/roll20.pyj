@@ -139,19 +139,23 @@ def whisperString(whisper):
         return ""
 
 def template(request, name, properties):
+    return whisperString(request.whisper) + templateAction(request, name, properties)
+
+def templateAction(request, name, properties):
     nonlocal settings
 
-    result = whisperString(request.whisper)
+    if settings["roll20-template"] == "default":
+        return templateActionDefault(request, name, properties)
+    else:
+        return templateAction5eByRoll20(request, name, properties)
 
-    renameProp = def(old_key, new_key):
-        nonlocal result
-        result = result.replace("{{" + old_key + "=", "{{" + new_key + "=")
+def templateActionBase(request, name, properties):
     removeProp = def(key):
         nonlocal result, properties
         result = result.replace("{{" + key + "=" + (properties[key] if key in properties else "1") + "}}", "")
         result = result.replace("&#123&#123" + key + "=" + (properties[key] if key in properties else "1") + "&#125&#125", "")
 
-    result += " &{template:" + name + "}"
+    result = " &{template:" + name + "}"
     for key in properties:
         result += " {{" + key + "=" + properties[key] + "}}"
 
@@ -164,55 +168,77 @@ def template(request, name, properties):
         removeProp("rnamec")
         removeProp("description")
 
-    if settings["roll20-template"] == "default":
-        result = result.replace("&{template:" + name + "}", "&{template:default}")
+    return result
+
+def templateAction5eByRoll20(request, name, properties):
+    removeProp = def(key):
+        nonlocal result, properties
+        result = result.replace("{{" + key + "=" + (properties[key] if key in properties else "1") + "}}", "")
+        result = result.replace("&#123&#123" + key + "=" + (properties[key] if key in properties else "1") + "&#125&#125", "")
+
+    result = templateActionBase(request, name, properties)
+
+    properties["r3"] = properties["r1"]
+    removeProp("r3")
+    del properties["r3"]
+
+    return result
+
+def templateActionDefault(request, name, properties):
+    renameProp = def(old_key, new_key):
+        nonlocal result
+        result = result.replace("{{" + old_key + "=", "{{" + new_key + "=")
+    removeProp = def(key):
+        nonlocal result, properties
+        result = result.replace("{{" + key + "=" + (properties[key] if key in properties else "1") + "}}", "")
+        result = result.replace("&#123&#123" + key + "=" + (properties[key] if key in properties else "1") + "&#125&#125", "")
+
+    result = templateActionBase(request, name, properties)
+
+    result = result.replace("&{template:" + name + "}", "&{template:default}")
 
 
-        renameProp("charname", "Character name")
-        renameProp("rname", "name")
-        if "{{r2=" in result or "&#123&#123r2=" in result:
-            renameProp("r1", "Regular Roll")
-            renameProp("r2", "Roll with [Dis]Advantage")
-            renameProp("r3", "Roll with Super [Dis]Advantage")
-            result = result.replace("&#123&#123r2=", "&#123&#123Roll with Advantage=")
-            result = result.replace("&#123&#123r2=", "&#123&#123Roll with Disadvantage=")
-            result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Advantage=")
-            result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Disadvantage=")
-        else:
-            renameProp("r1", "Dice Roll")
-        renameProp("mod", "Modifier")
-        if properties["dmg2"]?:
-            renameProp("dmg1", "First Damage")
-            renameProp("dmg1type", "First Damage Type")
-            renameProp("crit1", "First Crit Damage IF Critical")
-            renameProp("dmg2", "Second Damage")
-            renameProp("dmg2type", "Second Damage Type")
-            renameProp("crit2", "Second Crit Damage IF Critical")
-        if properties["dmg1"]?:
-            renameProp("dmg1", "Damage")
-            renameProp("dmg1type", "Damage Type")
-            renameProp("crit1", "Crit Damage IF Critical")
-        renameProp("saveattr", "Save Ability")
-        renameProp("savedc", "Save DC")
-        renameProp("athigherlevels", "At Higher Levels")
-        renameProp("castingtime", "Casting Time")
-        renameProp("hldmg", "Higher level cast")
-
-        removeProp("attack")
-        removeProp("attack")
-        removeProp("damage")
-        removeProp("save")
-        removeProp("dmg1flag")
-        removeProp("dmg2flag")
-        removeProp("always")
-        removeProp("normal")
-        removeProp("advantage")
-        removeProp("disadvantage")
-        removeProp("query")
+    renameProp("charname", "Character name")
+    renameProp("rname", "name")
+    if "{{r2=" in result or "&#123&#123r2=" in result:
+        renameProp("r1", "Regular Roll")
+        renameProp("r2", "Roll with [Dis]Advantage")
+        renameProp("r3", "Roll with Super [Dis]Advantage")
+        result = result.replace("&#123&#123r2=", "&#123&#123Roll with Advantage=")
+        result = result.replace("&#123&#123r2=", "&#123&#123Roll with Disadvantage=")
+        result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Advantage=")
+        result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Disadvantage=")
     else:
-        properties["r3"] = properties["r1"]
-        removeProp("r3")
-        del properties["r3"]
+        renameProp("r1", "Dice Roll")
+    renameProp("mod", "Modifier")
+    if properties["dmg2"]?:
+        renameProp("dmg1", "First Damage")
+        renameProp("dmg1type", "First Damage Type")
+        renameProp("crit1", "First Crit Damage IF Critical")
+        renameProp("dmg2", "Second Damage")
+        renameProp("dmg2type", "Second Damage Type")
+        renameProp("crit2", "Second Crit Damage IF Critical")
+    if properties["dmg1"]?:
+        renameProp("dmg1", "Damage")
+        renameProp("dmg1type", "Damage Type")
+        renameProp("crit1", "Crit Damage IF Critical")
+    renameProp("saveattr", "Save Ability")
+    renameProp("savedc", "Save DC")
+    renameProp("athigherlevels", "At Higher Levels")
+    renameProp("castingtime", "Casting Time")
+    renameProp("hldmg", "Higher level cast")
+
+    removeProp("attack")
+    removeProp("attack")
+    removeProp("damage")
+    removeProp("save")
+    removeProp("dmg1flag")
+    removeProp("dmg2flag")
+    removeProp("always")
+    removeProp("normal")
+    removeProp("advantage")
+    removeProp("disadvantage")
+    removeProp("query")
 
     return result
 
@@ -558,7 +584,7 @@ def updateSettings(new_settings=None):
 
 def handleMessage (request, sender, sendResponse):
     nonlocal settings
-    print("Got message : ", request)
+    print("Got MODIFIED message : ", request)
     if request.action == "settings":
         if request.type == "general":
             updateSettings(request.settings)
@@ -626,6 +652,7 @@ def handleMessage (request, sender, sendResponse):
         character_name = request.character.name
         if request.whisper == WhisperType.HIDE_NAMES:
             character_name = "???"
+        print("templated roll: ", roll)
         postChatMessage(roll, character_name)
 
 chrome.runtime.onMessage.addListener(handleMessage)

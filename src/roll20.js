@@ -7261,8 +7261,80 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function template(request, name, properties) {
-            var result, renameProp, removeProp, key;
-            result = whisperString(request.whisper);
+            return whisperString(request.whisper) + templateAction(request, name, properties);
+        };
+        if (!template.__argnames__) Object.defineProperties(template, {
+            __argnames__ : {value: ["request", "name", "properties"]}
+        });
+
+        function templateAction(request, name, properties) {
+            if ((settings["roll20-template"] === "default" || typeof settings["roll20-template"] === "object" && ρσ_equals(settings["roll20-template"], "default"))) {
+                return templateActionDefault(request, name, properties);
+            } else {
+                return templateAction5eByRoll20(request, name, properties);
+            }
+        };
+        if (!templateAction.__argnames__) Object.defineProperties(templateAction, {
+            __argnames__ : {value: ["request", "name", "properties"]}
+        });
+
+        function templateActionBase(request, name, properties) {
+            var removeProp, result, key;
+            removeProp = (function() {
+                var ρσ_anonfunc = function (key) {
+                    result = result.replace("{{" + key + "=" + ((ρσ_in(key, properties)) ? properties[(typeof key === "number" && key < 0) ? properties.length + key : key] : "1") + "}}", "");
+                    result = result.replace("&#123&#123" + key + "=" + ((ρσ_in(key, properties)) ? properties[(typeof key === "number" && key < 0) ? properties.length + key : key] : "1") + "&#125&#125", "");
+                };
+                if (!ρσ_anonfunc.__argnames__) Object.defineProperties(ρσ_anonfunc, {
+                    __argnames__ : {value: ["key"]}
+                });
+                return ρσ_anonfunc;
+            })();
+            result = " &{template:" + name + "}";
+            var ρσ_Iter2 = ρσ_Iterable(properties);
+            for (var ρσ_Index2 = 0; ρσ_Index2 < ρσ_Iter2.length; ρσ_Index2++) {
+                key = ρσ_Iter2[ρσ_Index2];
+                result += " {{" + key + "=" + properties[(typeof key === "number" && key < 0) ? properties.length + key : key] + "}}";
+            }
+            if (ρσ_exists.n(request.advantage) && !ρσ_in("normal", properties) && ρσ_in(name, ρσ_list_decorate([ "simple", "atk", "atkdmg" ]))) {
+                result += advantageString(request.advantage, properties["r1"]);
+            }
+            if ((request.whisper === WhisperType.prototype.HIDE_NAMES || typeof request.whisper === "object" && ρσ_equals(request.whisper, WhisperType.prototype.HIDE_NAMES))) {
+                removeProp("charname");
+                removeProp("rname");
+                removeProp("rnamec");
+                removeProp("description");
+            }
+            return result;
+        };
+        if (!templateActionBase.__argnames__) Object.defineProperties(templateActionBase, {
+            __argnames__ : {value: ["request", "name", "properties"]}
+        });
+
+        function templateAction5eByRoll20(request, name, properties) {
+            var removeProp, result;
+            removeProp = (function() {
+                var ρσ_anonfunc = function (key) {
+                    result = result.replace("{{" + key + "=" + ((ρσ_in(key, properties)) ? properties[(typeof key === "number" && key < 0) ? properties.length + key : key] : "1") + "}}", "");
+                    result = result.replace("&#123&#123" + key + "=" + ((ρσ_in(key, properties)) ? properties[(typeof key === "number" && key < 0) ? properties.length + key : key] : "1") + "&#125&#125", "");
+                };
+                if (!ρσ_anonfunc.__argnames__) Object.defineProperties(ρσ_anonfunc, {
+                    __argnames__ : {value: ["key"]}
+                });
+                return ρσ_anonfunc;
+            })();
+            result = templateActionBase(request, name, properties);
+            properties["r3"] = properties["r1"];
+            removeProp("r3");
+            ρσ_delitem(properties, "r3");
+            return result;
+        };
+        if (!templateAction5eByRoll20.__argnames__) Object.defineProperties(templateAction5eByRoll20, {
+            __argnames__ : {value: ["request", "name", "properties"]}
+        });
+
+        function templateActionDefault(request, name, properties) {
+            var renameProp, removeProp, result;
             renameProp = (function() {
                 var ρσ_anonfunc = function (old_key, new_key) {
                     result = result.replace("{{" + old_key + "=", "{{" + new_key + "=");
@@ -7282,74 +7354,54 @@ var str = ρσ_str, repr = ρσ_repr;;
                 });
                 return ρσ_anonfunc;
             })();
-            result += " &{template:" + name + "}";
-            var ρσ_Iter2 = ρσ_Iterable(properties);
-            for (var ρσ_Index2 = 0; ρσ_Index2 < ρσ_Iter2.length; ρσ_Index2++) {
-                key = ρσ_Iter2[ρσ_Index2];
-                result += " {{" + key + "=" + properties[(typeof key === "number" && key < 0) ? properties.length + key : key] + "}}";
-            }
-            if (ρσ_exists.n(request.advantage) && !ρσ_in("normal", properties) && ρσ_in(name, ρσ_list_decorate([ "simple", "atk", "atkdmg" ]))) {
-                result += advantageString(request.advantage, properties["r1"]);
-            }
-            if ((request.whisper === WhisperType.prototype.HIDE_NAMES || typeof request.whisper === "object" && ρσ_equals(request.whisper, WhisperType.prototype.HIDE_NAMES))) {
-                removeProp("charname");
-                removeProp("rname");
-                removeProp("rnamec");
-                removeProp("description");
-            }
-            if ((settings["roll20-template"] === "default" || typeof settings["roll20-template"] === "object" && ρσ_equals(settings["roll20-template"], "default"))) {
-                result = result.replace("&{template:" + name + "}", "&{template:default}");
-                renameProp("charname", "Character name");
-                renameProp("rname", "name");
-                if (ρσ_in("{{r2=", result) || ρσ_in("&#123&#123r2=", result)) {
-                    renameProp("r1", "Regular Roll");
-                    renameProp("r2", "Roll with [Dis]Advantage");
-                    renameProp("r3", "Roll with Super [Dis]Advantage");
-                    result = result.replace("&#123&#123r2=", "&#123&#123Roll with Advantage=");
-                    result = result.replace("&#123&#123r2=", "&#123&#123Roll with Disadvantage=");
-                    result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Advantage=");
-                    result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Disadvantage=");
-                } else {
-                    renameProp("r1", "Dice Roll");
-                }
-                renameProp("mod", "Modifier");
-                if (ρσ_exists.n(properties["dmg2"])) {
-                    renameProp("dmg1", "First Damage");
-                    renameProp("dmg1type", "First Damage Type");
-                    renameProp("crit1", "First Crit Damage IF Critical");
-                    renameProp("dmg2", "Second Damage");
-                    renameProp("dmg2type", "Second Damage Type");
-                    renameProp("crit2", "Second Crit Damage IF Critical");
-                }
-                if (ρσ_exists.n(properties["dmg1"])) {
-                    renameProp("dmg1", "Damage");
-                    renameProp("dmg1type", "Damage Type");
-                    renameProp("crit1", "Crit Damage IF Critical");
-                }
-                renameProp("saveattr", "Save Ability");
-                renameProp("savedc", "Save DC");
-                renameProp("athigherlevels", "At Higher Levels");
-                renameProp("castingtime", "Casting Time");
-                renameProp("hldmg", "Higher level cast");
-                removeProp("attack");
-                removeProp("attack");
-                removeProp("damage");
-                removeProp("save");
-                removeProp("dmg1flag");
-                removeProp("dmg2flag");
-                removeProp("always");
-                removeProp("normal");
-                removeProp("advantage");
-                removeProp("disadvantage");
-                removeProp("query");
+            result = templateActionBase(request, name, properties);
+            result = result.replace("&{template:" + name + "}", "&{template:default}");
+            renameProp("charname", "Character name");
+            renameProp("rname", "name");
+            if (ρσ_in("{{r2=", result) || ρσ_in("&#123&#123r2=", result)) {
+                renameProp("r1", "Regular Roll");
+                renameProp("r2", "Roll with [Dis]Advantage");
+                renameProp("r3", "Roll with Super [Dis]Advantage");
+                result = result.replace("&#123&#123r2=", "&#123&#123Roll with Advantage=");
+                result = result.replace("&#123&#123r2=", "&#123&#123Roll with Disadvantage=");
+                result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Advantage=");
+                result = result.replace("&#123&#123r2=", "&#123&#123Roll with Super Disadvantage=");
             } else {
-                properties["r3"] = properties["r1"];
-                removeProp("r3");
-                ρσ_delitem(properties, "r3");
+                renameProp("r1", "Dice Roll");
             }
+            renameProp("mod", "Modifier");
+            if (ρσ_exists.n(properties["dmg2"])) {
+                renameProp("dmg1", "First Damage");
+                renameProp("dmg1type", "First Damage Type");
+                renameProp("crit1", "First Crit Damage IF Critical");
+                renameProp("dmg2", "Second Damage");
+                renameProp("dmg2type", "Second Damage Type");
+                renameProp("crit2", "Second Crit Damage IF Critical");
+            }
+            if (ρσ_exists.n(properties["dmg1"])) {
+                renameProp("dmg1", "Damage");
+                renameProp("dmg1type", "Damage Type");
+                renameProp("crit1", "Crit Damage IF Critical");
+            }
+            renameProp("saveattr", "Save Ability");
+            renameProp("savedc", "Save DC");
+            renameProp("athigherlevels", "At Higher Levels");
+            renameProp("castingtime", "Casting Time");
+            renameProp("hldmg", "Higher level cast");
+            removeProp("attack");
+            removeProp("attack");
+            removeProp("damage");
+            removeProp("save");
+            removeProp("dmg1flag");
+            removeProp("dmg2flag");
+            removeProp("always");
+            removeProp("normal");
+            removeProp("advantage");
+            removeProp("disadvantage");
+            removeProp("query");
             return result;
         };
-        if (!template.__argnames__) Object.defineProperties(template, {
+        if (!templateActionDefault.__argnames__) Object.defineProperties(templateActionDefault, {
             __argnames__ : {value: ["request", "name", "properties"]}
         });
 
@@ -7963,7 +8015,7 @@ var str = ρσ_str, repr = ρσ_repr;;
 
         function handleMessage(request, sender, sendResponse) {
             var character_name, conditions, is_gm, em_command, message, custom_roll_dice, roll, mod, rname;
-            print("Got message : ", request);
+            print("Got MODIFIED message : ", request);
             if ((request.action === "settings" || typeof request.action === "object" && ρσ_equals(request.action, "settings"))) {
                 if ((request.type === "general" || typeof request.type === "object" && ρσ_equals(request.type, "general"))) {
                     updateSettings(request.settings);
@@ -8040,6 +8092,7 @@ var str = ρσ_str, repr = ρσ_repr;;
                 if ((request.whisper === WhisperType.prototype.HIDE_NAMES || typeof request.whisper === "object" && ρσ_equals(request.whisper, WhisperType.prototype.HIDE_NAMES))) {
                     character_name = "???";
                 }
+                print("templated roll: ", roll);
                 postChatMessage(roll, character_name);
             }
         };
