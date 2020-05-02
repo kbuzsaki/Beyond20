@@ -144,10 +144,188 @@ def template(request, name, properties):
 def templateAction(request, name, properties):
     nonlocal settings
 
-    if settings["roll20-template"] == "default":
+    template_type = settings["roll20-template"]
+    if template_type == "roll20":
+        return templateAction5eByRoll20(request, name, properties)
+    elif template_type == "5e-community":
+        return template5eCommunity(request)
+    elif template_type == "default":
         return templateActionDefault(request, name, properties)
     else:
-        return templateAction5eByRoll20(request, name, properties)
+        print("ERROR, unrecognized template type: ", template_type)
+
+def template5eCommunity(request):
+    is_spell = request["type"] == "spell-attack"
+    is_attack = request["type"] == "attack"
+    is_save = request["type"] == "saving-throw"
+    is_ability = request["type"] == "ability"
+    is_skill = request["type"] == "skill"
+    is_hit_die = request["type"] == "hit-dice"
+    is_custom = request["type"] == "custom"
+    is_initiative = request["type"] == "initiative"
+
+    def join(sep, els):
+        s = ""
+        for i in range(len(els)):
+            if i != 0:
+                s += sep
+            s += els[i]
+        return s
+
+    def segment(k, v): return "{{" + k + "=" + v + "}}"
+    def bool_seg(k, c): return segment(k, "1") if c else ""
+    def opt_segment(k, v): return segment(k, v) if v else ""
+
+    def macro(el): return "[[" + el + "]]"
+    def sum_macro(els): return macro(join(" ", els))
+    def get_attack(request): return sum_macro(["1d20", request["to-hit"]])
+    def get_nth_damage(request, n): return sum_macro([request["damages"][n]]) + " " + request["damage-types"][n]
+    def get_primary_damage(request): return get_nth_damage(request, 0)
+    def get_auxiliary_damage(request): return "Additional damage: " + join(", ", [get_nth_damage(request, n) for n in range(1, len(request["damages"]))])
+    def get_nth_crit_damage(request, n): return "Additional " + sum_macro([request["critical-damages"][n]]) + " " + request["critical-damage-types"][n]
+    def get_primary_crit_damage(request): return get_nth_crit_damage(request, 0)
+
+    def get_title(request):
+        if is_save:
+            return request["name"] + " saving throw"
+        elif is_skill:
+            return request["skill"] + " (" + request["ability"] + ")"
+        elif is_hit_die:
+            return "Spending Hit Dice - " + request["roll"].split("+")[0]
+        elif is_initiative:
+            return "Initiative"
+        return request["name"]
+
+    def get_action_type(request):
+        if is_spell:
+            return request["level-school"]
+        elif is_attack:
+            return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack")
+        else:
+            return ""
+
+    def get_header_segments(request):
+        return [
+            "&{template:5eDefault}",
+            segment("title", get_title(request)),
+            segment("subheader", request["character"]["name"]),
+            opt_segment("subheaderright", get_action_type(request)),
+        ]
+
+    def get_roll_segments(roll):
+        return [segment("roll1", roll), bool_seg("showadvroll", True), segment("roll2", roll)]
+
+    def get_save_segments(request):
+        if not is_save:
+            return []
+        segs = []
+        segs.extend([
+            bool_seg("save", True),
+            bool_seg("simple", True),
+            segment("rollname", request["ability"] + " save"),
+        ])
+        segs.extend(get_roll_segments(macro(request["roll"])))
+        return segs
+
+    def get_hit_die_segments(request):
+        if not is_hit_die:
+            return []
+        return [
+            segment("rollname", "HP Regained"),
+            segment("roll", macro(request["roll"])),
+        ]
+
+    def get_skill_segments(request):
+        if not is_skill and not is_ability:
+            return []
+        segs = []
+        segs.extend([
+            bool_seg("ability", True),
+            bool_seg("simple", True),
+            segment("rollname", "Result"),
+        ])
+        segs.extend(get_roll_segments(macro(request["roll"])))
+        return segs
+
+    def get_custom_segments(request):
+        if not is_custom:
+            return []
+        return [
+            segment("rollname", "Result"),
+            segment("roll", macro(request["roll"])),
+        ]
+
+    def get_initiative_segments(request):
+        if not is_initiative:
+            return []
+        return [
+            segment("rollname", "Initiative"),
+            segment("roll", macro(request["roll"])),
+        ]
+
+    def get_attack_segments(request):
+        if not is_attack:
+            return []
+        segs = []
+        segs.extend([
+            bool_seg("weapon", True),
+            bool_seg("simple", True),
+            segment("rollname", "Attack"),
+        ])
+        segs.extend(get_roll_segments(get_attack(request)))
+        segs.extend([
+            segment("weapondamage", get_primary_damage(request)),
+            segment("weaponcritdamage", get_primary_crit_damage(request)),
+        ])
+        return segs
+
+    def get_spell_segments(request):
+        if not is_spell:
+            return []
+        segments = []
+        segments.extend([
+            bool_seg("spell", True),
+        ])
+        if "to-hit" in request:
+            segments.extend([
+                bool_seg("spellshowattack", True),
+                segment("spellattack", get_attack(request)),
+                bool_seg("spellshowattackadv", True),
+                segment("spellattackadv", get_attack(request)),
+            ])
+        if "save-dc" in request:
+            segments.extend([
+                bool_seg("spellshowsavethrow", True),
+                segment("spellsavedc", macro(request["save-dc"])),
+                segment("spellsavestat", request["save-ability"]),
+                segment("spellsavesuccess", "Who knows?"),
+            ])
+        segments.extend([
+            bool_seg("spellshowdamage", True),
+            segment("spelldamage", get_primary_damage(request)),
+        ])
+        if "critical-damages" in request:
+            segments.extend([
+                bool_seg("spellcancrit", True),
+                segment("spellcritdamage", get_primary_crit_damage(request)),
+            ])
+        segments.append(bool_seg("spellshoweffects", True))
+        if len(request["damages"]) > 1:
+            segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + request["description"]))
+        else:
+            segments.append(opt_segment("spelleffect", request["description"]))
+        return segments
+
+    segments = []
+    for f in [get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments,
+            get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments]:
+        for s in f(request):
+            segments.append(s)
+
+    print("segments: ", segments)
+    print("len segs: ", len(segments))
+    def format_segments(segs): return join(" ", [seg for seg in segs if seg])
+    return format_segments(segments)
 
 def templateActionBase(request, name, properties):
     removeProp = def(key):
@@ -584,7 +762,11 @@ def updateSettings(new_settings=None):
 
 def handleMessage (request, sender, sendResponse):
     nonlocal settings
-    print("Got MODIFIED message : ", request)
+    filter_player = def(request):
+        r = dict(request)
+        del r["character"]
+        return r
+    print("Got MODIFIED message : ", filter_player(request))
     if request.action == "settings":
         if request.type == "general":
             updateSettings(request.settings)

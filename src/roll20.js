@@ -5905,6 +5905,7 @@ var str = ρσ_str, repr = ρσ_repr;;
                 ρσ_d["choices"] = (function(){
                     var ρσ_d = {};
                     ρσ_d["roll20"] = "D&D 5E By Roll20";
+                    ρσ_d["5e-community"] = "Custom D&D 5E Community Edition";
                     ρσ_d["default"] = "Other templates";
                     return ρσ_d;
                 }).call(this);
@@ -7268,14 +7269,312 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function templateAction(request, name, properties) {
-            if ((settings["roll20-template"] === "default" || typeof settings["roll20-template"] === "object" && ρσ_equals(settings["roll20-template"], "default"))) {
+            var template_type;
+            template_type = settings["roll20-template"];
+            if ((template_type === "roll20" || typeof template_type === "object" && ρσ_equals(template_type, "roll20"))) {
+                return templateAction5eByRoll20(request, name, properties);
+            } else if ((template_type === "5e-community" || typeof template_type === "object" && ρσ_equals(template_type, "5e-community"))) {
+                return template5eCommunity(request);
+            } else if ((template_type === "default" || typeof template_type === "object" && ρσ_equals(template_type, "default"))) {
                 return templateActionDefault(request, name, properties);
             } else {
-                return templateAction5eByRoll20(request, name, properties);
+                print("ERROR, unrecognized template type: ", template_type);
             }
         };
         if (!templateAction.__argnames__) Object.defineProperties(templateAction, {
             __argnames__ : {value: ["request", "name", "properties"]}
+        });
+
+        function template5eCommunity(request) {
+            var is_spell, is_attack, is_save, is_ability, is_skill, is_hit_die, is_custom, is_initiative, segments, s, f;
+            is_spell = (request["type"] === "spell-attack" || typeof request["type"] === "object" && ρσ_equals(request["type"], "spell-attack"));
+            is_attack = (request["type"] === "attack" || typeof request["type"] === "object" && ρσ_equals(request["type"], "attack"));
+            is_save = (request["type"] === "saving-throw" || typeof request["type"] === "object" && ρσ_equals(request["type"], "saving-throw"));
+            is_ability = (request["type"] === "ability" || typeof request["type"] === "object" && ρσ_equals(request["type"], "ability"));
+            is_skill = (request["type"] === "skill" || typeof request["type"] === "object" && ρσ_equals(request["type"], "skill"));
+            is_hit_die = (request["type"] === "hit-dice" || typeof request["type"] === "object" && ρσ_equals(request["type"], "hit-dice"));
+            is_custom = (request["type"] === "custom" || typeof request["type"] === "object" && ρσ_equals(request["type"], "custom"));
+            is_initiative = (request["type"] === "initiative" || typeof request["type"] === "object" && ρσ_equals(request["type"], "initiative"));
+            function join(sep, els) {
+                var s, i;
+                s = "";
+                var ρσ_Iter2 = ρσ_Iterable(range(len(els)));
+                for (var ρσ_Index2 = 0; ρσ_Index2 < ρσ_Iter2.length; ρσ_Index2++) {
+                    i = ρσ_Iter2[ρσ_Index2];
+                    if ((i !== 0 && (typeof i !== "object" || ρσ_not_equals(i, 0)))) {
+                        s += sep;
+                    }
+                    s += els[(typeof i === "number" && i < 0) ? els.length + i : i];
+                }
+                return s;
+            };
+            if (!join.__argnames__) Object.defineProperties(join, {
+                __argnames__ : {value: ["sep", "els"]}
+            });
+
+            function segment(k, v) {
+                return "{{" + k + "=" + v + "}}";
+            };
+            if (!segment.__argnames__) Object.defineProperties(segment, {
+                __argnames__ : {value: ["k", "v"]}
+            });
+
+            function bool_seg(k, c) {
+                return (c) ? segment(k, "1") : "";
+            };
+            if (!bool_seg.__argnames__) Object.defineProperties(bool_seg, {
+                __argnames__ : {value: ["k", "c"]}
+            });
+
+            function opt_segment(k, v) {
+                return (v) ? segment(k, v) : "";
+            };
+            if (!opt_segment.__argnames__) Object.defineProperties(opt_segment, {
+                __argnames__ : {value: ["k", "v"]}
+            });
+
+            function macro(el) {
+                return "[[" + el + "]]";
+            };
+            if (!macro.__argnames__) Object.defineProperties(macro, {
+                __argnames__ : {value: ["el"]}
+            });
+
+            function sum_macro(els) {
+                return macro(join(" ", els));
+            };
+            if (!sum_macro.__argnames__) Object.defineProperties(sum_macro, {
+                __argnames__ : {value: ["els"]}
+            });
+
+            function get_attack(request) {
+                return sum_macro(ρσ_list_decorate([ "1d20", request["to-hit"] ]));
+            };
+            if (!get_attack.__argnames__) Object.defineProperties(get_attack, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_nth_damage(request, n) {
+                return sum_macro(ρσ_list_decorate([ (ρσ_expr_temp = request["damages"])[(typeof n === "number" && n < 0) ? ρσ_expr_temp.length + n : n] ])) + " " + (ρσ_expr_temp = request["damage-types"])[(typeof n === "number" && n < 0) ? ρσ_expr_temp.length + n : n];
+            };
+            if (!get_nth_damage.__argnames__) Object.defineProperties(get_nth_damage, {
+                __argnames__ : {value: ["request", "n"]}
+            });
+
+            function get_primary_damage(request) {
+                return get_nth_damage(request, 0);
+            };
+            if (!get_primary_damage.__argnames__) Object.defineProperties(get_primary_damage, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_auxiliary_damage(request) {
+                return "Additional damage: " + join(", ", (function() {
+                    var ρσ_Iter = ρσ_Iterable(range(1, len(request["damages"]))), ρσ_Result = [], n;
+                    for (var ρσ_Index = 0; ρσ_Index < ρσ_Iter.length; ρσ_Index++) {
+                        n = ρσ_Iter[ρσ_Index];
+                        ρσ_Result.push(get_nth_damage(request, n));
+                    }
+                    ρσ_Result = ρσ_list_constructor(ρσ_Result);
+                    return ρσ_Result;
+                })());
+            };
+            if (!get_auxiliary_damage.__argnames__) Object.defineProperties(get_auxiliary_damage, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_nth_crit_damage(request, n) {
+                return "Additional " + sum_macro(ρσ_list_decorate([ (ρσ_expr_temp = request["critical-damages"])[(typeof n === "number" && n < 0) ? ρσ_expr_temp.length + n : n] ])) + " " + (ρσ_expr_temp = request["critical-damage-types"])[(typeof n === "number" && n < 0) ? ρσ_expr_temp.length + n : n];
+            };
+            if (!get_nth_crit_damage.__argnames__) Object.defineProperties(get_nth_crit_damage, {
+                __argnames__ : {value: ["request", "n"]}
+            });
+
+            function get_primary_crit_damage(request) {
+                return get_nth_crit_damage(request, 0);
+            };
+            if (!get_primary_crit_damage.__argnames__) Object.defineProperties(get_primary_crit_damage, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_title(request) {
+                if (is_save) {
+                    return request["name"] + " saving throw";
+                } else if (is_skill) {
+                    return request["skill"] + " (" + request["ability"] + ")";
+                } else if (is_hit_die) {
+                    return "Spending Hit Dice - " + request["roll"].split("+")[0];
+                } else if (is_initiative) {
+                    return "Initiative";
+                }
+                return request["name"];
+            };
+            if (!get_title.__argnames__) Object.defineProperties(get_title, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_action_type(request) {
+                if (is_spell) {
+                    return request["level-school"];
+                } else if (is_attack) {
+                    return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack");
+                } else {
+                    return "";
+                }
+            };
+            if (!get_action_type.__argnames__) Object.defineProperties(get_action_type, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_header_segments(request) {
+                return ρσ_list_decorate([ "&{template:5eDefault}", segment("title", get_title(request)), segment("subheader", request["character"]["name"]), opt_segment("subheaderright", get_action_type(request)) ]);
+            };
+            if (!get_header_segments.__argnames__) Object.defineProperties(get_header_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_roll_segments(roll) {
+                return ρσ_list_decorate([ segment("roll1", roll), bool_seg("showadvroll", true), segment("roll2", roll) ]);
+            };
+            if (!get_roll_segments.__argnames__) Object.defineProperties(get_roll_segments, {
+                __argnames__ : {value: ["roll"]}
+            });
+
+            function get_save_segments(request) {
+                var segs;
+                if (!is_save) {
+                    return ρσ_list_decorate([]);
+                }
+                segs = ρσ_list_decorate([]);
+                segs.extend(ρσ_list_decorate([ bool_seg("save", true), bool_seg("simple", true), segment("rollname", request["ability"] + " save") ]));
+                segs.extend(get_roll_segments(macro(request["roll"])));
+                return segs;
+            };
+            if (!get_save_segments.__argnames__) Object.defineProperties(get_save_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_hit_die_segments(request) {
+                if (!is_hit_die) {
+                    return ρσ_list_decorate([]);
+                }
+                return ρσ_list_decorate([ segment("rollname", "HP Regained"), segment("roll", macro(request["roll"])) ]);
+            };
+            if (!get_hit_die_segments.__argnames__) Object.defineProperties(get_hit_die_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_skill_segments(request) {
+                var segs;
+                if (!is_skill && !is_ability) {
+                    return ρσ_list_decorate([]);
+                }
+                segs = ρσ_list_decorate([]);
+                segs.extend(ρσ_list_decorate([ bool_seg("ability", true), bool_seg("simple", true), segment("rollname", "Result") ]));
+                segs.extend(get_roll_segments(macro(request["roll"])));
+                return segs;
+            };
+            if (!get_skill_segments.__argnames__) Object.defineProperties(get_skill_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_custom_segments(request) {
+                if (!is_custom) {
+                    return ρσ_list_decorate([]);
+                }
+                return ρσ_list_decorate([ segment("rollname", "Result"), segment("roll", macro(request["roll"])) ]);
+            };
+            if (!get_custom_segments.__argnames__) Object.defineProperties(get_custom_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_initiative_segments(request) {
+                if (!is_initiative) {
+                    return ρσ_list_decorate([]);
+                }
+                return ρσ_list_decorate([ segment("rollname", "Initiative"), segment("roll", macro(request["roll"])) ]);
+            };
+            if (!get_initiative_segments.__argnames__) Object.defineProperties(get_initiative_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_attack_segments(request) {
+                var segs;
+                if (!is_attack) {
+                    return ρσ_list_decorate([]);
+                }
+                segs = ρσ_list_decorate([]);
+                segs.extend(ρσ_list_decorate([ bool_seg("weapon", true), bool_seg("simple", true), segment("rollname", "Attack") ]));
+                segs.extend(get_roll_segments(get_attack(request)));
+                segs.extend(ρσ_list_decorate([ segment("weapondamage", get_primary_damage(request)), segment("weaponcritdamage", get_primary_crit_damage(request)) ]));
+                return segs;
+            };
+            if (!get_attack_segments.__argnames__) Object.defineProperties(get_attack_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            function get_spell_segments(request) {
+                var segments;
+                if (!is_spell) {
+                    return ρσ_list_decorate([]);
+                }
+                segments = ρσ_list_decorate([]);
+                segments.extend(ρσ_list_decorate([ bool_seg("spell", true) ]));
+                if (ρσ_in("to-hit", request)) {
+                    segments.extend(ρσ_list_decorate([ bool_seg("spellshowattack", true), segment("spellattack", get_attack(request)), bool_seg("spellshowattackadv", true), segment("spellattackadv", get_attack(request)) ]));
+                }
+                if (ρσ_in("save-dc", request)) {
+                    segments.extend(ρσ_list_decorate([ bool_seg("spellshowsavethrow", true), segment("spellsavedc", macro(request["save-dc"])), segment("spellsavestat", request["save-ability"]), segment("spellsavesuccess", "Who knows?") ]));
+                }
+                segments.extend(ρσ_list_decorate([ bool_seg("spellshowdamage", true), segment("spelldamage", get_primary_damage(request)) ]));
+                if (ρσ_in("critical-damages", request)) {
+                    segments.extend(ρσ_list_decorate([ bool_seg("spellcancrit", true), segment("spellcritdamage", get_primary_crit_damage(request)) ]));
+                }
+                segments.append(bool_seg("spellshoweffects", true));
+                if (len(request["damages"]) > 1) {
+                    segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + request["description"]));
+                } else {
+                    segments.append(opt_segment("spelleffect", request["description"]));
+                }
+                return segments;
+            };
+            if (!get_spell_segments.__argnames__) Object.defineProperties(get_spell_segments, {
+                __argnames__ : {value: ["request"]}
+            });
+
+            segments = ρσ_list_decorate([]);
+            var ρσ_Iter3 = ρσ_Iterable(ρσ_list_decorate([ get_header_segments, get_hit_die_segments, get_save_segments, get_initiative_segments, get_skill_segments, get_spell_segments, get_attack_segments, get_custom_segments ]));
+            for (var ρσ_Index3 = 0; ρσ_Index3 < ρσ_Iter3.length; ρσ_Index3++) {
+                f = ρσ_Iter3[ρσ_Index3];
+                var ρσ_Iter4 = ρσ_Iterable(f(request));
+                for (var ρσ_Index4 = 0; ρσ_Index4 < ρσ_Iter4.length; ρσ_Index4++) {
+                    s = ρσ_Iter4[ρσ_Index4];
+                    segments.append(s);
+                }
+            }
+            print("segments: ", segments);
+            print("len segs: ", len(segments));
+            function format_segments(segs) {
+                return join(" ", (function() {
+                    var ρσ_Iter = ρσ_Iterable(segs), ρσ_Result = [], seg;
+                    for (var ρσ_Index = 0; ρσ_Index < ρσ_Iter.length; ρσ_Index++) {
+                        seg = ρσ_Iter[ρσ_Index];
+                        if (seg) {
+                            ρσ_Result.push(seg);
+                        }
+                    }
+                    ρσ_Result = ρσ_list_constructor(ρσ_Result);
+                    return ρσ_Result;
+                })());
+            };
+            if (!format_segments.__argnames__) Object.defineProperties(format_segments, {
+                __argnames__ : {value: ["segs"]}
+            });
+
+            return format_segments(segments);
+        };
+        if (!template5eCommunity.__argnames__) Object.defineProperties(template5eCommunity, {
+            __argnames__ : {value: ["request"]}
         });
 
         function templateActionBase(request, name, properties) {
@@ -7291,9 +7590,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                 return ρσ_anonfunc;
             })();
             result = " &{template:" + name + "}";
-            var ρσ_Iter2 = ρσ_Iterable(properties);
-            for (var ρσ_Index2 = 0; ρσ_Index2 < ρσ_Iter2.length; ρσ_Index2++) {
-                key = ρσ_Iter2[ρσ_Index2];
+            var ρσ_Iter5 = ρσ_Iterable(properties);
+            for (var ρσ_Index5 = 0; ρσ_Index5 < ρσ_Iter5.length; ρσ_Index5++) {
+                key = ρσ_Iter5[ρσ_Index5];
                 result += " {{" + key + "=" + properties[(typeof key === "number" && key < 0) ? properties.length + key : key] + "}}";
             }
             if (ρσ_exists.n(request.advantage) && !ρσ_in("normal", properties) && ρσ_in(name, ρσ_list_decorate([ "simple", "atk", "atkdmg" ]))) {
@@ -7428,9 +7727,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                 if ((request.modifier !== "--" && (typeof request.modifier !== "object" || ρσ_not_equals(request.modifier, "--"))) && (request.modifier !== "+0" && (typeof request.modifier !== "object" || ρσ_not_equals(request.modifier, "+0")))) {
                     magic = request.modifier;
                 }
-                var ρσ_Iter3 = ρσ_Iterable(request.character.abilities);
-                for (var ρσ_Index3 = 0; ρσ_Index3 < ρσ_Iter3.length; ρσ_Index3++) {
-                    ability = ρσ_Iter3[ρσ_Index3];
+                var ρσ_Iter6 = ρσ_Iterable(request.character.abilities);
+                for (var ρσ_Index6 = 0; ρσ_Index6 < ρσ_Iter6.length; ρσ_Index6++) {
+                    ability = ρσ_Iter6[ρσ_Index6];
                     modifier += "|" + ability[0] + ", " + ability[3] + magic;
                 }
                 modifier += "}";
@@ -7651,9 +7950,9 @@ var str = ρσ_str, repr = ρσ_repr;;
             source = request["item-type"].trim().toLowerCase();
             if ((source === "tool, common" || typeof source === "object" && ρσ_equals(source, "tool, common")) && request.character.abilities.length > 0) {
                 modifier = "?{Choose Ability";
-                var ρσ_Iter4 = ρσ_Iterable(request.character.abilities);
-                for (var ρσ_Index4 = 0; ρσ_Index4 < ρσ_Iter4.length; ρσ_Index4++) {
-                    ability = ρσ_Iter4[ρσ_Index4];
+                var ρσ_Iter7 = ρσ_Iterable(request.character.abilities);
+                for (var ρσ_Index7 = 0; ρσ_Index7 < ρσ_Iter7.length; ρσ_Index7++) {
+                    ability = ρσ_Iter7[ρσ_Index7];
                     modifier += "|" + ability[0] + ", " + ability[3];
                 }
                 modifier += "}";
@@ -7746,9 +8045,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                 damage_types = list(request["damage-types"]);
                 crit_damages = list(request["critical-damages"]);
                 crit_damage_types = list(request["critical-damage-types"]);
-                var ρσ_Iter5 = ρσ_Iterable(enumerate(damage_types));
-                for (var ρσ_Index5 = 0; ρσ_Index5 < ρσ_Iter5.length; ρσ_Index5++) {
-                    ρσ_unpack = ρσ_Iter5[ρσ_Index5];
+                var ρσ_Iter8 = ρσ_Iterable(enumerate(damage_types));
+                for (var ρσ_Index8 = 0; ρσ_Index8 < ρσ_Iter8.length; ρσ_Index8++) {
+                    ρσ_unpack = ρσ_Iter8[ρσ_Index8];
                     dmgIndex = ρσ_unpack[0];
                     dmgType = ρσ_unpack[1];
                     if ((damage_types[(typeof dmgIndex === "number" && dmgIndex < 0) ? damage_types.length + dmgIndex : dmgIndex] === "Colossus Slayer" || typeof damage_types[(typeof dmgIndex === "number" && dmgIndex < 0) ? damage_types.length + dmgIndex : dmgIndex] === "object" && ρσ_equals(damage_types[(typeof dmgIndex === "number" && dmgIndex < 0) ? damage_types.length + dmgIndex : dmgIndex], "Colossus Slayer"))) {
@@ -7778,9 +8077,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                 properties["rname"] = "[" + request.name + "](!\n" + escapeRoll20Macro(dmg_template) + ")";
                 properties["rnamec"] = "[" + request.name + "](!\n" + escapeRoll20Macro(dmg_template_crit) + ")";
             } else {
-                var ρσ_Iter6 = ρσ_Iterable(dmg_props);
-                for (var ρσ_Index6 = 0; ρσ_Index6 < ρσ_Iter6.length; ρσ_Index6++) {
-                    key = ρσ_Iter6[ρσ_Index6];
+                var ρσ_Iter9 = ρσ_Iterable(dmg_props);
+                for (var ρσ_Index9 = 0; ρσ_Index9 < ρσ_Iter9.length; ρσ_Index9++) {
+                    key = ρσ_Iter9[ρσ_Index9];
                     properties[(typeof key === "number" && key < 0) ? properties.length + key : key] = dmg_props[(typeof key === "number" && key < 0) ? dmg_props.length + key : key];
                 }
             }
@@ -7876,9 +8175,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                 critical_damage_types = list(request["critical-damage-types"]);
                 if ((request.name === "Chromatic Orb" || typeof request.name === "object" && ρσ_equals(request.name, "Chromatic Orb"))) {
                     chromatic_type = "?{Choose damage type";
-                    var ρσ_Iter7 = ρσ_Iterable(ρσ_list_decorate([ "Acid", "Cold", "Fire", "Lightning", "Poison", "Thunder" ]));
-                    for (var ρσ_Index7 = 0; ρσ_Index7 < ρσ_Iter7.length; ρσ_Index7++) {
-                        dmgtype = ρσ_Iter7[ρσ_Index7];
+                    var ρσ_Iter10 = ρσ_Iterable(ρσ_list_decorate([ "Acid", "Cold", "Fire", "Lightning", "Poison", "Thunder" ]));
+                    for (var ρσ_Index10 = 0; ρσ_Index10 < ρσ_Iter10.length; ρσ_Index10++) {
+                        dmgtype = ρσ_Iter10[ρσ_Index10];
                         idx = damage_types.index(dmgtype);
                         chromatic_damage = damages.pypop(idx);
                         damage_types.pypop(idx);
@@ -7895,9 +8194,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                     critical_damages.insert(0, crit_damage);
                     critical_damage_types.insert(0, chromatic_type);
                 } else if ((request.name === "Chaos Bolt" || typeof request.name === "object" && ρσ_equals(request.name, "Chaos Bolt"))) {
-                    var ρσ_Iter8 = ρσ_Iterable(ρσ_list_decorate([ "Acid", "Cold", "Fire", "Force", "Lightning", "Poison", "Psychic", "Thunder" ]));
-                    for (var ρσ_Index8 = 0; ρσ_Index8 < ρσ_Iter8.length; ρσ_Index8++) {
-                        dmgtype = ρσ_Iter8[ρσ_Index8];
+                    var ρσ_Iter11 = ρσ_Iterable(ρσ_list_decorate([ "Acid", "Cold", "Fire", "Force", "Lightning", "Poison", "Psychic", "Thunder" ]));
+                    for (var ρσ_Index11 = 0; ρσ_Index11 < ρσ_Iter11.length; ρσ_Index11++) {
+                        dmgtype = ρσ_Iter11[ρσ_Index11];
                         idx = damage_types.index(dmgtype);
                         base_damage = damages.pypop(idx);
                         damage_types.pypop(idx);
@@ -7961,9 +8260,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                 properties["rname"] = "[" + request.name + "](!\n" + escapeRoll20Macro(dmg_template) + ")";
                 properties["rnamec"] = "[" + request.name + "](!\n" + escapeRoll20Macro(dmg_template_crit) + ")";
             } else {
-                var ρσ_Iter9 = ρσ_Iterable(dmg_props);
-                for (var ρσ_Index9 = 0; ρσ_Index9 < ρσ_Iter9.length; ρσ_Index9++) {
-                    key = ρσ_Iter9[ρσ_Index9];
+                var ρσ_Iter12 = ρσ_Iterable(dmg_props);
+                for (var ρσ_Index12 = 0; ρσ_Index12 < ρσ_Iter12.length; ρσ_Index12++) {
+                    key = ρσ_Iter12[ρσ_Index12];
                     properties[(typeof key === "number" && key < 0) ? properties.length + key : key] = dmg_props[(typeof key === "number" && key < 0) ? dmg_props.length + key : key];
                 }
             }
@@ -8014,8 +8313,20 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function handleMessage(request, sender, sendResponse) {
-            var character_name, conditions, is_gm, em_command, message, custom_roll_dice, roll, mod, rname;
-            print("Got MODIFIED message : ", request);
+            var filter_player, character_name, conditions, is_gm, em_command, message, custom_roll_dice, roll, mod, rname;
+            filter_player = (function() {
+                var ρσ_anonfunc = function (request) {
+                    var r;
+                    r = dict(request);
+                    ρσ_delitem(r, "character");
+                    return r;
+                };
+                if (!ρσ_anonfunc.__argnames__) Object.defineProperties(ρσ_anonfunc, {
+                    __argnames__ : {value: ["request"]}
+                });
+                return ρσ_anonfunc;
+            })();
+            print("Got MODIFIED message : ", filter_player(request));
             if ((request.action === "settings" || typeof request.action === "object" && ρσ_equals(request.action, "settings"))) {
                 if ((request.type === "general" || typeof request.type === "object" && ρσ_equals(request.type, "general"))) {
                     updateSettings(request.settings);

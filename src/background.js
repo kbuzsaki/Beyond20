@@ -5939,6 +5939,7 @@ var str = ρσ_str, repr = ρσ_repr;;
                 ρσ_d["choices"] = (function(){
                     var ρσ_d = {};
                     ρσ_d["roll20"] = "D&D 5E By Roll20";
+                    ρσ_d["5e-community"] = "Custom D&D 5E Community Edition";
                     ρσ_d["default"] = "Other templates";
                     return ρσ_d;
                 }).call(this);
