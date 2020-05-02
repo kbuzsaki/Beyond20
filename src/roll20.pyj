@@ -203,6 +203,8 @@ def template5eCommunity(request):
             return request["level-school"]
         elif is_attack:
             return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack")
+        elif is_item:
+            return request["item-type"]
         else:
             return ""
 
@@ -283,10 +285,10 @@ def template5eCommunity(request):
             segment("rollname", "Attack"),
         ])
         segs.extend(get_roll_segments(get_attack(request)))
-        segs.extend([
-            segment("weapondamage", get_primary_damage(request)),
-            segment("weaponcritdamage", get_primary_crit_damage(request)),
-        ])
+        if "damages" in request:
+            segs.append(segment("weapondamage", get_primary_damage(request)))
+        if "critical-damages" in request:
+            segs.append(segment("weaponcritdamage", get_primary_crit_damage(request)))
         return segs
 
     def get_spell_segments(request):

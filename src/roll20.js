@@ -7423,6 +7423,8 @@ var str = ρσ_str, repr = ρσ_repr;;
                     return request["level-school"];
                 } else if (is_attack) {
                     return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack");
+                } else if (is_item) {
+                    return request["item-type"];
                 } else {
                     return "";
                 }
@@ -7521,7 +7523,12 @@ var str = ρσ_str, repr = ρσ_repr;;
                 segs = ρσ_list_decorate([]);
                 segs.extend(ρσ_list_decorate([ bool_seg("weapon", true), bool_seg("simple", true), segment("rollname", "Attack") ]));
                 segs.extend(get_roll_segments(get_attack(request)));
-                segs.extend(ρσ_list_decorate([ segment("weapondamage", get_primary_damage(request)), segment("weaponcritdamage", get_primary_crit_damage(request)) ]));
+                if (ρσ_in("damages", request)) {
+                    segs.append(segment("weapondamage", get_primary_damage(request)));
+                }
+                if (ρσ_in("critical-damages", request)) {
+                    segs.append(segment("weaponcritdamage", get_primary_crit_damage(request)));
+                }
                 return segs;
             };
             if (!get_attack_segments.__argnames__) Object.defineProperties(get_attack_segments, {
