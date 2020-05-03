@@ -166,6 +166,12 @@ def template5eCommunity(request):
     is_initiative = rtype == "initiative"
     is_item = rtype == "item"
 
+    def clean_description(d):
+        return description.replace(/\n\n\n+/gi, '\n\n')
+
+    description = request["description"] if "description" in request else ""
+    description = clean_description(description)
+
     def join(sep, els):
         s = ""
         for i in range(len(els)):
@@ -274,11 +280,11 @@ def template5eCommunity(request):
         ]
 
     def get_description_segments(request):
-        if is_attack or is_spell or "description" not in request:
+        if is_attack or is_spell or description == "":
             return []
         return [
             segment("freetextname", "Description"),
-            segment("freetext", request["description"]),
+            segment("freetext", description),
         ]
 
     def get_attack_segments(request):
@@ -330,9 +336,9 @@ def template5eCommunity(request):
             ])
         segments.append(bool_seg("spellshoweffects", True))
         if "damages" in request and len(request["damages"]) > 1:
-            segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + request["description"]))
+            segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + description))
         else:
-            segments.append(opt_segment("spelleffect", request["description"]))
+            segments.append(opt_segment("spelleffect", description))
         return segments
 
     segments = []

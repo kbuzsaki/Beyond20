@@ -7289,7 +7289,7 @@ var str = ρσ_str, repr = ρσ_repr;;
         });
 
         function template5eCommunity(request) {
-            var rtype, is_spell, is_attack, is_save, is_ability, is_skill, is_hit_die, is_custom, is_initiative, is_item, segments, s, f;
+            var rtype, is_spell, is_attack, is_save, is_ability, is_skill, is_hit_die, is_custom, is_initiative, is_item, description, segments, s, f;
             rtype = request["type"];
             is_spell = (rtype === "spell-attack" || typeof rtype === "object" && ρσ_equals(rtype, "spell-attack")) || (rtype === "spell-card" || typeof rtype === "object" && ρσ_equals(rtype, "spell-card"));
             is_attack = (rtype === "attack" || typeof rtype === "object" && ρσ_equals(rtype, "attack"));
@@ -7300,6 +7300,15 @@ var str = ρσ_str, repr = ρσ_repr;;
             is_custom = (rtype === "custom" || typeof rtype === "object" && ρσ_equals(rtype, "custom"));
             is_initiative = (rtype === "initiative" || typeof rtype === "object" && ρσ_equals(rtype, "initiative"));
             is_item = (rtype === "item" || typeof rtype === "object" && ρσ_equals(rtype, "item"));
+            function clean_description(d) {
+                return description.replace(/\n\n\n+/gi, "\n\n");
+            };
+            if (!clean_description.__argnames__) Object.defineProperties(clean_description, {
+                __argnames__ : {value: ["d"]}
+            });
+
+            description = (ρσ_in("description", request)) ? request["description"] : "";
+            description = clean_description(description);
             function join(sep, els) {
                 var s, i;
                 s = "";
@@ -7522,10 +7531,10 @@ var str = ρσ_str, repr = ρσ_repr;;
             });
 
             function get_description_segments(request) {
-                if (is_attack || is_spell || !ρσ_in("description", request)) {
+                if (is_attack || is_spell || (description === "" || typeof description === "object" && ρσ_equals(description, ""))) {
                     return ρσ_list_decorate([]);
                 }
-                return ρσ_list_decorate([ segment("freetextname", "Description"), segment("freetext", request["description"]) ]);
+                return ρσ_list_decorate([ segment("freetextname", "Description"), segment("freetext", description) ]);
             };
             if (!get_description_segments.__argnames__) Object.defineProperties(get_description_segments, {
                 __argnames__ : {value: ["request"]}
@@ -7572,9 +7581,9 @@ var str = ρσ_str, repr = ρσ_repr;;
                 }
                 segments.append(bool_seg("spellshoweffects", true));
                 if (ρσ_in("damages", request) && len(request["damages"]) > 1) {
-                    segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + request["description"]));
+                    segments.append(opt_segment("spelleffect", get_auxiliary_damage(request) + "\n" + description));
                 } else {
-                    segments.append(opt_segment("spelleffect", request["description"]));
+                    segments.append(opt_segment("spelleffect", description));
                 }
                 return segments;
             };
