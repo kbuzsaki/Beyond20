@@ -313,7 +313,7 @@ function rollInitiative(request, custom_roll_dice = "") {
     return template(request, "simple", roll_properties);
 }
 
-function rollHitDice(request) {
+function rollHitDice(request, custom_roll_dice = "") {
     const rname = "Hit Dice" + (request.multiclass ? `(${request.class})` : "");
     return template(request, "simple", {
         "charname": request.character.name,
