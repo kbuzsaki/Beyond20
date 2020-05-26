@@ -268,6 +268,11 @@ function template5eCommunity(request, name, properties) {
     };
     let get_spell_segments = (request) => {
         if (!["spell-attack", "spell-card"].includes(request["type"])) return [];
+        let spell_effect_display_setting = settings["roll20-spell-effect-display"];
+        let show_damage_description = (spell_effect_display_setting === "always")
+            || (spell_effect_display_setting === "save-dc" && request["save-dc"] !== undefined)
+            || (spell_effect_display_setting === "leveled-spells" && !request["level-school"].includes("Cantrip"));
+
         let get_spell_to_hit = (request) => (request["to-hit"] === undefined ? []
             : ["spellshowattack",    ["spellattack", get_attack_roll(request)],
                "spellshowattackadv", ["spellattackadv", get_attack_roll(request)]]);
@@ -281,10 +286,13 @@ function template5eCommunity(request, name, properties) {
         let get_spell_effect = (request) => {
             if (request["damages"] === undefined) {
                 return ["spellshoweffects", ["spelleffect", description]];
-            } else if (request["damages"].length > 1) {
-                return ["spellshoweffects", ["spelleffect", "Additional damage: " + get_auxiliary_damage(request)]];
+            } else {
+                let additional_damage = (request["damages"].length <= 1) ? ""
+                    : "Additional damage: " + get_auxiliary_damage(request);
+                let additional_description = show_damage_description ? description : "";
+                let effect = [additional_damage, additional_description].join("\n").trim();
+                return effect.length === 0 ? [] : ["spellshoweffects", ["spelleffect", effect]];
             }
-            return [];
         };
 
         return ["spell"]

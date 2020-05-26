@@ -181,6 +181,20 @@ const options_list = {
         }
     },
 
+    "roll20-spell-effect-display": {
+        "title": "Roll20 Spell Effect Display",
+        "description": "When to include the full spell effect text in the roll20 template message.\n" +
+            "The full spell text is always included as part of \"Display in VTT\" action.",
+        "type": "combobox",
+        "default": "always",
+        "choices": {
+            "always": "Always Display Effect",
+            "save-dc": "Save DC Damage Spells",
+            "leveled-spells": "Leveled Spells",
+            "default": "\"Display in VTT\" Only"
+        }
+    },
+
     "subst-roll20": {
         "type": "migrate",
         "to": "subst-vtt",
