@@ -167,7 +167,154 @@ function whisperString(whisper) {
 }
 
 function template(request, name, properties) {
-    let result = whisperString(request.whisper);
+    return whisperString(request.whisper) + " " + templateAction(request, name, properties);
+}
+
+function templateAction(request, name, properties) {
+    let template_type = settings["roll20-template"];
+    if (template_type === "5e-community") {
+        return template5eCommunity(request, name, properties);
+    } else {
+        return templateUpstream(request, name, properties);
+    }
+}
+
+function template5eCommunity(request, name, properties) {
+    let get_title = (request) => {
+        switch (request["type"]) {
+            case "saving-throw": return request["name"] + " saving throw";
+            case "skill": return request["skill"] + " (" + request["ability"] + ")";
+            case "initiative": return "Initiative";
+            case "hit-dice": return "Spending Hit Dice - " + request["roll"].split("+")[0];
+            case "death-save": return "Death Save";
+            default: return request["name"];
+        }
+    };
+
+    let get_action_type = (request) => {
+        switch (request["type"]) {
+            case "spell-card":
+            case "spell-attack": return request["level-school"];
+            case "attack": return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack");
+            case "item": return request["item-type"];
+            case "hit-dice": return request["class"];
+            default: {
+                if (request.proficiency !== undefined) {
+                    return request.proficiency.replace("Proficiency", "Proficient");
+                } else if (request.source !== undefined) {
+                    return [request["source"], request["source-type"]].filter(el => el).join(", ");
+                } else {
+                    return "";
+                }
+            }
+        }
+    };
+
+    let macro = (el) => "[[" + el + "]]";
+    let get_adv_roll_segments = (roll) => [["roll1", roll], ["roll2", roll]];
+
+    let get_roll = (request) => macro(request["roll"]);
+    let get_attack_roll = (request) => macro(["1d20", request["to-hit"]].join(" "));
+    let format_nth_damage = (damages, damage_types, n) => macro(damages[n]) + " " + damage_types[n];
+    let get_damage = (request, n) => (request["damages"] || []).length === 0 ? ""
+        : format_nth_damage(request["damages"], request["damage-types"], n || 0);
+    let get_critical_damage = (request, n) => (request["critical-damages"] || []).length === 0 ? ""
+        : "Additional " + format_nth_damage(request["critical-damages"], request["critical-damage-types"], n || 0);
+
+    let get_auxiliary_damage = (request) => request.damages.slice(1)
+        .map((v, i) => format_nth_damage(request["damages"], request["damage-types"], i+1))
+        .join(", ");
+
+    let get_check_segments = (request) => {
+        let roll_attrs = {
+            "skill":        {types: ["simple", "showadvroll", "ability"], name: "Result"},
+            "ability":      {types: ["simple", "showadvroll", "ability"], name: "Result"},
+            "saving-throw": {types: ["simple", "showadvroll", "save"], name: request["ability"] + " save"},
+            "death-save":   {types: ["simple", "noadvroll", "deathsave"], name: "Death save"}
+        }[request["type"]];
+        if (roll_attrs === undefined) return [];
+
+        return [["rollname", roll_attrs.name]]
+          .concat(roll_attrs.types)
+          .concat(get_adv_roll_segments(get_roll(request)));
+    };
+    let get_roll_segments = (request) => {
+        let roll_attrs = {
+            "initiative": {types: [], name: "Initiative"},
+            "hit-dice":   {types: [], name: "HP Regained"},
+            "custom":     {types: [], name: "Result"}
+        }[request["type"]];
+        if (roll_attrs === undefined) return [];
+
+        return [["rollname", roll_attrs.name], ["roll", get_roll(request)]]
+          .concat(roll_attrs.types);
+    };
+
+    let description = (request["description"] || "").replace(/\n\n\n+/gi, '\n\n');
+    let get_description_segments = (request) => {
+        if (["attack", "spell-attack", "spell-card"].includes(request["type"])) return [];
+        if (description === "") return [];
+        return [["freetextname", "Description"], ["freetext", description]];
+    };
+
+    // TODO: handle versatile weapons
+    let get_attack_segments = (request) => {
+        if (request["type"] !== "attack") return [];
+        return [
+            "simple", "weapon", "showadvroll", ["rollname", "Attack"],
+            ["weapondamage", get_damage(request)],
+            ["weaponcritdamage", get_critical_damage(request)]
+        ].concat(get_adv_roll_segments(get_attack_roll(request)));
+    };
+    let get_spell_segments = (request) => {
+        if (!["spell-attack", "spell-card"].includes(request["type"])) return [];
+        let get_spell_to_hit = (request) => (request["to-hit"] === undefined ? []
+            : ["spellshowattack",    ["spellattack", get_attack_roll(request)],
+               "spellshowattackadv", ["spellattackadv", get_attack_roll(request)]]);
+        let get_spell_save = (request) => (request["save-dc"] === undefined ? []
+            : ["spellshowsavethrow", ["spellsavesuccess", "See full description."],
+               ["spellsavedc", macro(request["save-dc"])], ["spellsavestat", request["save-ability"]]]);
+        let get_spell_damage = (request) => (request["damages"] === undefined ? []
+            : ["spellshowdamage", ["spelldamage", get_damage(request)]]);
+        let get_spell_critical_damage = (request) => (request["critical-damages"] === undefined ? []
+            : ["spellcancrit",    ["spellcritdamage", get_critical_damage(request)]]);
+        let get_spell_effect = (request) => {
+            if (request["damages"] === undefined) {
+                return ["spellshoweffects", ["spelleffect", description]];
+            } else if (request["damages"].length > 1) {
+                return ["spellshoweffects", ["spelleffect", "Additional damage: " + get_auxiliary_damage(request)]];
+            }
+            return [];
+        };
+
+        return ["spell"]
+         .concat(get_spell_to_hit(request))
+         .concat(get_spell_save(request))
+         .concat(get_spell_damage(request))
+         .concat(get_spell_critical_damage(request))
+         .concat(get_spell_effect(request));
+    };
+
+    let segments = [
+        ["title", get_title(request)],
+        ["subheader", request["character"]["name"]],
+        ["subheaderright", get_action_type(request)]
+    ].concat(get_check_segments(request))
+     .concat(get_roll_segments(request))
+     .concat(get_description_segments(request))
+     .concat(get_attack_segments(request))
+     .concat(get_spell_segments(request));
+
+    console.log("segments:", segments);
+
+    return "&{template:5eDefault}" + segments
+        .filter(el => el.length > 0 && el[el.length - 1] !== "")
+        .map(p => "{{" + (((typeof p) === "string") ? p + "=1" : p[0] + "=" + p[1]) + "}}")
+        .join(" ");
+}
+
+function templateUpstream(request, name, properties) {
+    let result = "";
 
     const removeProp = (key) => {
         result = result.replace("{{" + key + "=" + (Object.keys(properties).includes(key) ? properties[key] : "1") + "}}", "");
