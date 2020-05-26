@@ -63,6 +63,7 @@ const SRC_FILES = {
     roll20: [
         ...ROLL_RENDERER_DEPS,
         "src/roll20/renderer.js",
+        "src/roll20/custom_5e_community_templater.js",
         "src/roll20/content-script.js"
     ],
     roll20_script: [
@@ -240,7 +241,7 @@ gulp.task("build-firefox",gulp.series([
 gulp.task("build-chrome", gulp.series([
     "copy-chrome-from-base",
     "chrome-manifest"
-])); 
+]));
 
 
 gulp.task('default', gulp.series(['build', 'build-chrome', 'build-firefox', 'watch']));

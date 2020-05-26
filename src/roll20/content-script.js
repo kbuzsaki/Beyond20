@@ -934,7 +934,13 @@ function handleMessage(request, sender, sendResponse) {
             return postChatMessage(request.message, character_name);
         }
         const isOGL = $("#isOGL").val() === "1";
-        if (settings["roll20-template"] === "default" || !isOGL) {
+        if (settings["roll20-template"] === "5e-community") {
+            let roll = custom_5e_community_templater.templateRequest(request);
+            let character_name = request.whisper == WhisperType.HIDE_NAMES ? "???" : request.character.name;
+            postChatMessage(roll, character_name);
+            return;
+        } else if (settings["roll20-template"] === "default" || !isOGL) {
+            request.sendMessage = true;
             return roll_renderer.handleRollRequest(request);
         }
         handleRoll(request);

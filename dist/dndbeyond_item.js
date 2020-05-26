@@ -174,6 +174,8 @@ class WhisperType {
     static get YES() { return 1; }
     static get QUERY() { return 2; }
     static get HIDE_NAMES() { return 3; }
+    static get HIDE_CREATURE_NAMES() { return 4; }
+    static get HIDE_ACTION_NAMES() { return 5; }
 }
 
 class RollType {
@@ -227,10 +229,12 @@ const options_list = {
         "title": "Whisper monster rolls to the DM",
         "description": "Overrides the global whisper setting from monster stat blocks",
         "type": "combobox",
-        "default": WhisperType.YES,
+        "default": WhisperType.HIDE_CREATURE_NAMES,
         "choices": {
             [WhisperType.NO.toString()]: "Use general whisper setting",
             [WhisperType.HIDE_NAMES.toString()]: "Hide monster and attack name",
+            [WhisperType.HIDE_CREATURE_NAMES.toString()]: "Hide monster name only",
+            [WhisperType.HIDE_ACTION_NAMES.toString()]: "Hide attack name only",
             [WhisperType.YES.toString()]: "Always whisper monster rolls",
             [WhisperType.QUERY.toString()]: "Ask every time"
         }
@@ -239,6 +243,15 @@ const options_list = {
     "hide-results-on-whisper-to-discord": {
         "title": "Hide roll results on D&D Beyond when whispering to Discord",
         "description": "Don't show the roll results on D&D Beyond when using whisper and sending results to \"D&D Beyond Dice Roller & Discord\"",
+        "type": "bool",
+        "default": false
+    },
+
+    "show-monster-effect": {
+        "short": "Show effect description for monster attacks",
+        "title": "Show effect description for monster attacks",
+        "description": "Whether to show attack effects (including DCs and other special effects) in the description for monster attacks. Sometimes contains spoilers or parses the description incorrectly.",
+        "short_description": "Note: sometimes contains spoilers or parses the description incorrectly.",
         "type": "bool",
         "default": false
     },
@@ -356,8 +369,64 @@ const options_list = {
         "description": "Select the Character Sheet Template that you use in Roll20\n" +
             "If the template does not match the campaign setting, it will default to the Beyond20 Roll Renderer.",
         "type": "combobox",
-        "default": "roll20",
-        "choices": { "roll20": "D&D 5E By Roll20", "default": "Beyond20 Roll Renderer" }
+        "default": "5e-community",
+        "choices": {
+            "roll20": "D&D 5E By Roll20",
+            "5e-community": "Custom D&D 5E Community Edition",
+            "default": "Beyond20 Roll Renderer"
+        }
+    },
+
+    "roll20-spell-effect-display": {
+        "short": "Roll20 Spell Effect Display",
+        "title": "Roll20 Spell Effect Display",
+        "description": "When to include the full spell effect text in the roll20 template message.\n" +
+            "The full spell text is always included as part of \"Display in VTT\" action.",
+        "type": "combobox",
+        "default": "leveled-spells",
+        "choices": {
+            "always": "Always Display Effect",
+            "save-dc": "Save DC Damage Spells",
+            "leveled-spells": "Leveled Spells",
+            "default": "\"Display in VTT\" Only"
+        }
+    },
+
+    "roll20-suppress-description": {
+        "short": "Suppress Descriptions When",
+        "title": "Roll20 Suppress Descriptions When",
+        "short_description": "Hold a modifier key to temporarily suppress long action or spell descriptions.",
+        "description": "Override the \"Spell Effect Display\" setting to suppress the description when holding a given modifier key. Note that these modifier keys overlap with the \"Type of Roll\" modifier keys.",
+        "type": "combobox",
+        "default": "with-ctrl",
+        "choices": {
+            "never": "Never",
+            "with-shift": "Holding Shift",
+            "with-ctrl": "Holding Ctrl/Cmd"
+        }
+    },
+
+    "roll20-spell-info-display": {
+        "short": "Roll20 Spell Info Block",
+        "title": "Roll20 Spell Info Block Display",
+        "description": "When to include the spell info block (cast time, duration, range) in the roll20 template message.\n",
+        "type": "combobox",
+        "default": "leveled-spells-or-display",
+        "choices": {
+            "always": "Always Display Spell Info",
+            "leveled-spells": "Leveled Spells",
+            "display-in-vtt": "\"Display in VTT\" Only",
+            "leveled-spells-or-display": "Leveled Spells or \"Display in VTT\"",
+            "never": "Never Display Spell Info"
+        }
+    },
+
+    "roll20-infer-spell-info": {
+        "short": "Roll20 Infer Spell Info",
+        "title": "Roll20 Spell Info Block Inference",
+        "description": "Whether to attempt to infer spell info (e.g. target) from the spell description text when it is not directly present in the table of spell info.\n",
+        "type": "bool",
+        "default": true,
     },
 
     "notes-to-vtt": {
@@ -1555,7 +1624,7 @@ function createHotkeysSetting(name, short) {
 
     const setting = E.li({
         id: "beyond20-option-hotkeys-bindings",
-        class: "list-group-item beyond20-option beyond20-option-bool" 
+        class: "list-group-item beyond20-option beyond20-option-bool"
     },
         E.label({ class: "list-content", for: name },
             E.h4({}, opt.title),
