@@ -215,6 +215,12 @@ function template5eCommunity(request, name, properties) {
             }
         }
     };
+    let get_subheader2 = (request) => {
+        return [
+            request.concentration ? "(Concentration)" : "",
+            request.ritual ? "(Ritual)" : "",
+        ].filter((el) => { return el !== "" }).join(" ");
+    };
 
     let macro = (el) => "[[" + el + "]]";
     let get_adv_roll_segments = (roll) => [["roll1", roll], ["roll2", roll]];
@@ -312,7 +318,8 @@ function template5eCommunity(request, name, properties) {
     let segments = [
         ["title", get_title(request)],
         ["subheader", get_name(request)],
-        ["subheaderright", get_action_type(request)]
+        ["subheaderright", get_action_type(request)],
+        ["subheader2", get_subheader2(request)]
     ].concat(get_check_segments(request))
      .concat(get_roll_segments(request))
      .concat(get_description_segments(request))
