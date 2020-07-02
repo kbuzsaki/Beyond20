@@ -3482,8 +3482,7 @@ function handleMessage(request, sender, sendResponse) {
             postChatMessage(message, character_name);
         }
     } else if (request.action == "roll") {
-        const isOGL = $("#isOGL").val() === "1";
-        if (settings["roll20-template"] === "default" || !isOGL) {
+        if (settings["roll20-template"] === "default") {
             request.sendMessage = true;
             return roll_renderer.handleRollRequest(request);
         }
