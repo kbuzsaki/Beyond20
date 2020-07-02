@@ -46,16 +46,22 @@ function rollAbilityOrSavingThrow(paneClass, rollType) {
     const ability = ability_abbreviations[ability_name];
     let modifier = $("." + paneClass + "__modifier .ct-signed-number,." + paneClass + "__modifier .ddbc-signed-number").text();
 
+    let proficiency = undefined;
     if (rollType == "ability" && character.hasClassFeature("Jack of All Trades") &&
         character.getSetting("bard-joat", false)) {
         const JoaT = Math.floor(character._proficiency / 2);
         modifier += " + " + JoaT;
+        proficiency = "Jack of All Trades";
+    }
+    if (rollType == "saving-throw") {
+        proficiency = $(".ddbc-saving-throws-summary__ability--" + ability.toLowerCase() + " .ddbc-saving-throws-summary__ability-proficiency .ddbc-tooltip").attr("data-original-title");
     }
 
     const roll_properties = {
         "name": ability_name,
         "ability": ability,
-        "modifier": modifier
+        "modifier": modifier,
+        "proficiency": proficiency
     }
 
     if (ability == "STR" &&
@@ -81,6 +87,12 @@ function rollInitiative() {
         initiative = $(".ct-combat-mobile__extra--initiative .ct-combat-mobile__extra-value").text();
         advantage = $(".ct-combat-mobile__advantage").length > 0;
     }
+    // Jack of All Trades is already included in the initiative modifier, but also display the proficiency text
+    let proficiency = undefined;
+    if (character.hasClassFeature("Jack of All Trades")) {
+        proficiency = "Jack of All Trades";
+    }
+
     //console.log("Initiative " + ("with" if (advantage else "without") + " advantage ) { " + initiative);
 
     if (character.getGlobalSetting("initiative-tiebreaker", false)) {
@@ -94,7 +106,7 @@ function rollInitiative() {
         initiative = initiative >= 0 ? '+' + initiative.toFixed(2) : initiative.toFixed(2);
     }
 
-    const roll_properties = { "initiative": initiative }
+    const roll_properties = { "initiative": initiative, "proficiency": proficiency }
     if (advantage)
         roll_properties["advantage"] = RollType.OVERRIDE_ADVANTAGE;
     sendRollWithCharacter("initiative", "1d20" + initiative, roll_properties);
