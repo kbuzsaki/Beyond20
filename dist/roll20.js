@@ -2779,6 +2779,12 @@ function template5eCommunity(request, name, properties) {
             default: return request["name"];
         }
     };
+    let get_name = (request) => {
+        if (request.character.name !== undefined && request.character.name !== null) {
+            return request.character.name;
+        }
+        return "";
+    }
 
     let get_action_type = (request) => {
         switch (request["type"]) {
@@ -2894,7 +2900,7 @@ function template5eCommunity(request, name, properties) {
 
     let segments = [
         ["title", get_title(request)],
-        ["subheader", request["character"]["name"]],
+        ["subheader", get_name(request)],
         ["subheaderright", get_action_type(request)]
     ].concat(get_check_segments(request))
      .concat(get_roll_segments(request))
@@ -2905,7 +2911,7 @@ function template5eCommunity(request, name, properties) {
     console.log("segments:", segments);
 
     return "&{template:5eDefault}" + segments
-        .filter(el => el.length > 0 && el[el.length - 1] !== "")
+        .filter(el => el.length > 0 && el[el.length - 1] !== undefined && el[el.length - 1] !== "")
         .map(p => "{{" + (((typeof p) === "string") ? p + "=1" : p[0] + "=" + p[1]) + "}}")
         .join(" ");
 }
