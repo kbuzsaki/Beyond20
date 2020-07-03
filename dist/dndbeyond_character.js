@@ -5096,7 +5096,8 @@ function rollSpell(force_display = false) {
 
         sendRollWithCharacter("spell-attack", damages[0] || "", roll_properties);
     } else {
-        const roll_properties = {
+        const roll_properties = buildAttackRoll(character, "spell", spell_name, description, properties);
+        const spell_properties = {
             "name": spell_name,
             "level-school": level,
             "range": (properties["Range/Area"] || ""),
@@ -5107,6 +5108,8 @@ function rollSpell(force_display = false) {
             "ritual": ritual,
             "description": description
         }
+        for (let key in spell_properties)
+            roll_properties[key] = spell_properties[key];
         if (castas != "" && !level.startsWith(castas))
             roll_properties["cast-at"] = castas;
         sendRollWithCharacter("spell-card", 0, roll_properties);
