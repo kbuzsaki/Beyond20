@@ -327,7 +327,7 @@ const options_list = {
         "description": "Select the Character Sheet Template that you use in Roll20\n" +
             "If the template does not match the campaign setting, it will default to the Beyond20 Roll Renderer.",
         "type": "combobox",
-        "default": "roll20",
+        "default": "5e-community",
         "choices": {
             "roll20": "D&D 5E By Roll20",
             "5e-community": "Custom D&D 5E Community Edition",
@@ -340,7 +340,7 @@ const options_list = {
         "description": "When to include the full spell effect text in the roll20 template message.\n" +
             "The full spell text is always included as part of \"Display in VTT\" action.",
         "type": "combobox",
-        "default": "always",
+        "default": "leveled-spells",
         "choices": {
             "always": "Always Display Effect",
             "save-dc": "Save DC Damage Spells",
@@ -353,7 +353,7 @@ const options_list = {
         "title": "Roll20 Spell Info Block Display",
         "description": "When to include the spell info block (cast time, duration, range) in the roll20 template message.\n",
         "type": "combobox",
-        "default": "always",
+        "default": "leveled-spells-or-display",
         "choices": {
             "always": "Always Display Spell Info",
             "leveled-spells": "Leveled Spells",
