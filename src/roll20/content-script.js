@@ -202,7 +202,7 @@ function template5eCommunity(request, name, properties) {
         switch (request["type"]) {
             case "spell-card":
             case "spell-attack": return request["level-school"];
-            case "attack": return (request["attack-type"] + " Attack").replace("Attack Attack", "Attack");
+            case "attack": return ((request["attack-type"] || "") + " Attack").replace("Attack Attack", "Attack").trim();
             case "item": return request["item-type"];
             case "hit-dice": return request["class"];
             default: {
