@@ -2905,8 +2905,14 @@ function template5eCommunity(request, name, properties) {
         let get_spell_save = (request) => (request["save-dc"] === undefined ? []
             : ["spellshowsavethrow", ["spellsavesuccess", "See full description."],
                ["spellsavedc", macro(request["save-dc"])], ["spellsavestat", request["save-ability"]]]);
-        let get_spell_damage = (request) => (request["damages"] === undefined ? []
-            : ["spellshowdamage", ["spelldamage", get_damage(request)]]);
+        let get_spell_damage = (request) => {
+            if (request["damages"] === undefined) return []
+            if (request["damage-types"][0] === "Healing") {
+                return ["spellshowhealing", ["spellhealing", macro(request["damages"][0])]];
+            } else {
+                return ["spellshowdamage", ["spelldamage", get_damage(request)]];
+            }
+        }
         let get_spell_critical_damage = (request) => (request["critical-damages"] === undefined ? []
             : ["spellcancrit",    ["spellcritdamage", get_critical_damage(request)]]);
         let get_spell_effect = (request) => {
@@ -2914,7 +2920,7 @@ function template5eCommunity(request, name, properties) {
                 return ["spellshoweffects", ["spelleffect", description]];
             } else {
                 let additional_damage = (request["damages"].length <= 1) ? ""
-                    : "Additional damage: " + get_auxiliary_damage(request);
+                    : "Additional effect: " + get_auxiliary_damage(request);
                 let additional_description = show_damage_description ? description : "";
                 let effect = [additional_damage, additional_description].join("\n").trim();
                 return effect.length === 0 ? [] : ["spellshoweffects", ["spelleffect", effect]];
