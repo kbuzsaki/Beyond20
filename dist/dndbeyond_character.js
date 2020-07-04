@@ -348,6 +348,20 @@ const options_list = {
         }
     },
 
+    "roll20-spell-info-display": {
+        "title": "Roll20 Spell Info Block Display",
+        "description": "When to include the spell info block (cast time, duration, range) in the roll20 template message.\n",
+        "type": "combobox",
+        "default": "always",
+        "choices": {
+            "always": "Always Display Spell Info",
+            "leveled-spells": "Leveled Spells",
+            "display-in-vtt": "\"Display in VTT\" Only",
+            "leveled-spells-or-display": "Leveled Spells or \"Display in VTT\"",
+            "never": "Never Display Spell Info"
+        }
+    },
+
     "subst-roll20": {
         "type": "migrate",
         "to": "subst-vtt",
@@ -4551,7 +4565,7 @@ function rollItem(force_display = false) {
             damages.push(`1d6+${Math.floor(barbarian_level / 2)}`);
             damage_types.push("Divine Fury");
         }
-        if (to_hit !== null && 
+        if (to_hit !== null &&
             character.getSetting("sharpshooter", false) &&
             properties["Attack Type"] == "Ranged" &&
             properties["Proficient"] == "Yes") {
@@ -4560,7 +4574,7 @@ function rollItem(force_display = false) {
             damage_types.push("Sharpshooter");
             character.mergeCharacterSettings({ "sharpshooter": false });
         }
-        if (to_hit !== null && 
+        if (to_hit !== null &&
             character.getSetting("great-weapon-master", false) &&
             properties["Attack Type"] == "Melee" &&
             properties["Properties"].includes("Heavy") &&
@@ -4904,7 +4918,13 @@ function rollSpell(force_display = false) {
     } else {
         concentration = false;
     }
-    let to_hit = properties["To Hit"] !== undefined && properties["To Hit"] !== "--" ? properties["To Hit"] : null;;
+    let area_shape = undefined;
+    let area_element = $(".ct-spell-pane i.ct-spell-detail__range-icon");
+    if (area_element.length !== 0) {
+        area_shape = area_element[0].classList[1].split("-aoe-")[1];
+    }
+    let gained_from = $(".ct-spell-pane .ct-sidebar__header-parent").text();
+    let to_hit = properties["To Hit"] !== undefined && properties["To Hit"] !== "--" ? properties["To Hit"] : null;
 
     if (to_hit === null)
         to_hit = findToHit(spell_full_name, ".ct-combat-attack--spell,.ddbc-combat-attack--spell", ".ct-spell-name,.ddbc-spell-name", ".ct-combat-attack__tohit,.ddbc-combat-attack__tohit");
@@ -5073,7 +5093,9 @@ function rollSpell(force_display = false) {
             roll_properties["critical-limit"] = critical_limit;
 
         const spell_properties = {
+            "gained-from": gained_from,
             "level-school": level,
+            "aoe-shape": (area_shape || ""),
             "concentration": concentration,
             "duration": duration,
             "casting-time": properties["Casting Time"] || "",
@@ -5099,8 +5121,10 @@ function rollSpell(force_display = false) {
         const roll_properties = buildAttackRoll(character, "spell", spell_name, description, properties);
         const spell_properties = {
             "name": spell_name,
+            "gained-from": gained_from,
             "level-school": level,
             "range": (properties["Range/Area"] || ""),
+            "aoe-shape": (area_shape || ""),
             "concentration": concentration,
             "duration": duration,
             "casting-time": (properties["Casting Time"] || ""),

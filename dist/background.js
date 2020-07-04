@@ -393,6 +393,20 @@ const options_list = {
         }
     },
 
+    "roll20-spell-info-display": {
+        "title": "Roll20 Spell Info Block Display",
+        "description": "When to include the spell info block (cast time, duration, range) in the roll20 template message.\n",
+        "type": "combobox",
+        "default": "always",
+        "choices": {
+            "always": "Always Display Spell Info",
+            "leveled-spells": "Leveled Spells",
+            "display-in-vtt": "\"Display in VTT\" Only",
+            "leveled-spells-or-display": "Leveled Spells or \"Display in VTT\"",
+            "never": "Never Display Spell Info"
+        }
+    },
+
     "subst-roll20": {
         "type": "migrate",
         "to": "subst-vtt",

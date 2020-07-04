@@ -348,6 +348,20 @@ const options_list = {
         }
     },
 
+    "roll20-spell-info-display": {
+        "title": "Roll20 Spell Info Block Display",
+        "description": "When to include the spell info block (cast time, duration, range) in the roll20 template message.\n",
+        "type": "combobox",
+        "default": "always",
+        "choices": {
+            "always": "Always Display Spell Info",
+            "leveled-spells": "Leveled Spells",
+            "display-in-vtt": "\"Display in VTT\" Only",
+            "leveled-spells-or-display": "Leveled Spells or \"Display in VTT\"",
+            "never": "Never Display Spell Info"
+        }
+    },
+
     "subst-roll20": {
         "type": "migrate",
         "to": "subst-vtt",
@@ -2869,10 +2883,13 @@ function template5eCommunity(request, name, properties) {
     };
     let get_spell_segments = (request) => {
         if (!["spell-attack", "spell-card"].includes(request["type"])) return [];
+        let is_leveled_spell = !request["level-school"].includes("Cantrip");
+        let is_spell_card = request["type"] === "spell-card";
+
         let spell_effect_display_setting = settings["roll20-spell-effect-display"];
         let show_damage_description = (spell_effect_display_setting === "always")
             || (spell_effect_display_setting === "save-dc" && request["save-dc"] !== undefined)
-            || (spell_effect_display_setting === "leveled-spells" && !request["level-school"].includes("Cantrip"));
+            || (spell_effect_display_setting === "leveled-spells" && is_leveled_spell);
 
         let get_spell_to_hit = (request) => (request["to-hit"] === undefined ? []
             : ["spellshowattack",    ["spellattack", get_attack_roll(request)],
@@ -2895,12 +2912,42 @@ function template5eCommunity(request, name, properties) {
                 return effect.length === 0 ? [] : ["spellshoweffects", ["spelleffect", effect]];
             }
         };
+        let get_spell_infoblock = (request) => {
+            let display_setting = settings["roll20-spell-info-display"];
+            let show_spell_block = (display_setting === "always")
+                || (display_setting === "leveled-spells" && is_leveled_spell)
+                || (display_setting === "display-in-vtt" && is_spell_card)
+                || (display_setting === "leveled-spells-or-display" && (is_leveled_spell || is_spell_card));
+            if (!show_spell_block) return [];
+
+            // ignore the specific material components
+            let components = request["components"].split("(")[0].trim();
+            // parse out the range and target
+            let range_target = request["range"].trim();
+            let range = range_target.split("/")[0].split("(")[0].trim();
+            let target_size = range_target.substr(range.length).replace(/[(\)\/]/g, "").trim();
+            let aoe_shape = request["aoe-shape"];
+
+            let normalize_ft = (dist) => dist.replace("ft", "ft.").replace("ft..", "ft.");
+            let format_titlecase = (s) => (s && s.length > 0) ? s[0].toUpperCase() + s.substr(1).toLowerCase() : "";
+
+            return [
+                ["spellshowinfoblock"],
+                ["spellgainedfrom", request["gained-from"]],
+                ["spellcomponents", components],
+                ["spellcasttime", request["casting-time"]],
+                ["spellduration", request["duration"]],
+                ["spelltarget", (normalize_ft(target_size) + " " + format_titlecase(aoe_shape)).trim()],
+                ["spellrange", normalize_ft(range)]
+            ];
+        };
 
         return ["spell"]
          .concat(get_spell_to_hit(request))
          .concat(get_spell_save(request))
          .concat(get_spell_damage(request))
          .concat(get_spell_critical_damage(request))
+         .concat(get_spell_infoblock(request))
          .concat(get_spell_effect(request));
     };
 
