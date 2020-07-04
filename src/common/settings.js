@@ -209,6 +209,13 @@ const options_list = {
         }
     },
 
+    "roll20-infer-spell-info": {
+        "title": "Roll20 Spell Info Block Inference",
+        "description": "Whether to attempt to infer spell info (e.g. target) from the spell description text when it is not directly present in the table of spell info.\n",
+        "type": "bool",
+        "default": true,
+    },
+
     "subst-roll20": {
         "type": "migrate",
         "to": "subst-vtt",

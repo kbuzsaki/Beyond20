@@ -1,5 +1,6 @@
 console.log("Beyond20: Roll20 module loaded.");
 
+
 const ROLL20_WHISPER_QUERY = "?{Whisper?|Public Roll,|Whisper Roll,/w gm }"
 const ROLL20_ADVANTAGE_QUERY = "{{query=1}} ?{Advantage?|Normal Roll,&#123&#123normal=1&#125&#125|Advantage,&#123&#123advantage=1&#125&#125 &#123&#123r2={r2}&#125&#125|Disadvantage,&#123&#123disadvantage=1&#125&#125 &#123&#123r2={r2}&#125&#125|Super Advantage,&#123&#123advantage=1&#125&#125 &#123&#123r2={r2kh}&#125&#125|Super Disadvantage,&#123&#123disadvantage=1&#125&#125 &#123&#123r2={r2kl}&#125&#125}"
 const ROLL20_INITIATIVE_ADVANTAGE_QUERY = "?{Roll Initiative with advantage?|Normal Roll,1d20|Advantage,2d20kh1|Disadvantage,2d20kl1|Super Advantage,3d20kh1|Super Disadvantage,3d20kl1}"
@@ -317,6 +318,10 @@ function template5eCommunity(request, name, properties) {
                 || (display_setting === "leveled-spells-or-display" && (is_leveled_spell || is_spell_card));
             if (!show_spell_block) return [];
 
+            let normalize_ft = (dist) => dist.replace("ft", "ft.").replace("ft..", "ft.");
+            let format_titlecase = (s) => (s && s.length > 0) ? s[0].toUpperCase() + s.substr(1).toLowerCase() : "";
+            let remove_titlecase = (s) => (s && s.length > 0) ? s[0].toLowerCase() + s.substr(1) : "";
+
             // ignore the specific material components
             let components = request["components"].split("(")[0].trim();
 
@@ -328,10 +333,21 @@ function template5eCommunity(request, name, properties) {
             if (range === "Self" && target === "") {
                 range = "--";
                 target = "Self";
+            } else if (target === "" && settings["roll20-infer-spell-info"]) {
+                let matchers = [
+                    /((an?|(one|two)( [^.]+)?|up to [^.]+|any [^.]+) (creature|humanoid|beast|object|unoccupied space)s?[^.]*) (with)?in range/i,
+                    /((an?|(one|two)( [^.]+)?|up to [^.]+|any [^.]+) (creature|humanoid|beast|object|unoccupied space)s?[^.]* with which you are familiar)/i,
+                    /you touch ((an?|one) ([^.]+ )?(creature|humanoid|beast|object))/i,
+                    /(an? [^.]+) you touch/i
+                ];
+                for (let matcher of matchers) {
+                    let matches = description.match(matcher);
+                    if (matches) {
+                        target = remove_titlecase(matches[1].replace(" of your choice", "").trim());
+                        break;
+                    }
+                }
             }
-
-            let normalize_ft = (dist) => dist.replace("ft", "ft.").replace("ft..", "ft.");
-            let format_titlecase = (s) => (s && s.length > 0) ? s[0].toUpperCase() + s.substr(1).toLowerCase() : "";
 
             return [
                 ["spellshowinfoblock"],
