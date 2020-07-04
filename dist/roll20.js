@@ -2922,11 +2922,16 @@ function template5eCommunity(request, name, properties) {
 
             // ignore the specific material components
             let components = request["components"].split("(")[0].trim();
+
             // parse out the range and target
             let range_target = request["range"].trim();
             let range = range_target.split("/")[0].split("(")[0].trim();
-            let target_size = range_target.substr(range.length).replace(/[(\)\/]/g, "").trim();
+            let target = range_target.substr(range.length).replace(/[(\)\/]/g, "").trim();
             let aoe_shape = request["aoe-shape"];
+            if (range === "Self" && target === "") {
+                range = "--";
+                target = "Self";
+            }
 
             let normalize_ft = (dist) => dist.replace("ft", "ft.").replace("ft..", "ft.");
             let format_titlecase = (s) => (s && s.length > 0) ? s[0].toUpperCase() + s.substr(1).toLowerCase() : "";
@@ -2937,7 +2942,7 @@ function template5eCommunity(request, name, properties) {
                 ["spellcomponents", components],
                 ["spellcasttime", request["casting-time"]],
                 ["spellduration", request["duration"]],
-                ["spelltarget", (normalize_ft(target_size) + " " + format_titlecase(aoe_shape)).trim()],
+                ["spelltarget", (normalize_ft(target) + " " + format_titlecase(aoe_shape)).trim()],
                 ["spellrange", normalize_ft(range)]
             ];
         };
