@@ -2941,8 +2941,14 @@ function template5eCommunity(request, name, properties) {
             let target = range_target.substr(range.length).replace(/[(\)\/]/g, "").trim();
             let aoe_shape = request["aoe-shape"];
             if (range === "Self" && target === "") {
-                range = "--";
                 target = "Self";
+                range = "--";
+                if (settings["roll20-infer-spell-info"]) {
+                    let matches = description.match(/(\d+) feet/);
+                    if (matches) {
+                        range = matches[1] + "ft.";
+                    }
+                }
             } else if (target === "" && settings["roll20-infer-spell-info"]) {
                 let matchers = [
                     /((an?|(one|two)( [^.]+)?|up to [^.]+|any [^.]+) (creature|humanoid|beast|object|unoccupied space)s?[^.]*) (with)?in range/i,
