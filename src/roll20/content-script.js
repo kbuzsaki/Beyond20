@@ -273,6 +273,9 @@ function template5eCommunity(request, name, properties) {
     // TODO: handle versatile weapons
     let get_attack_segments = (request) => {
         if (request["type"] !== "attack") return [];
+        if (request["to-hit"] === undefined) {
+            return ["weapon", ["damage", get_all_damages(request)]];
+        }
         return [
             "simple", "weapon", "showadvroll", ["rollname", "Attack"],
             ["weapondamage", get_all_damages(request)],
