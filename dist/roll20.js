@@ -2887,7 +2887,6 @@ function template5eCommunity(request, name, properties) {
         return [["freetextname", "Description"], ["freetext", description]];
     };
 
-    // TODO: handle versatile weapons
     let get_attack_segments = (request) => {
         if (request["type"] !== "attack") return [];
         // Special handling to use the regular weapon template for character basic attacks
