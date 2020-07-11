@@ -273,8 +273,11 @@ function template5eCommunity(request, name, properties) {
     // TODO: handle versatile weapons
     let get_attack_segments = (request) => {
         if (request["type"] !== "attack") return [];
+        let get_save_text = (request) => (request["save-dc"] === undefined ? [] :
+            [["freetext", ["DC", macro(request["save-dc"]), request["save-ability"], "save"].join(" ")]]);
+
         if (request["to-hit"] === undefined) {
-            return ["weapon", ["damage", get_all_damages(request)]];
+            return ["weapon", ["damage", get_all_damages(request)]].concat(get_save_text(request));
         }
         return [
             "simple", "weapon", "showadvroll", ["rollname", "Attack"],
