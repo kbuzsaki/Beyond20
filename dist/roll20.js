@@ -2839,14 +2839,14 @@ function template5eCommunity(request, name, properties) {
     let get_roll = (request) => macro(request["roll"]);
     let get_attack_roll = (request) => macro(["1d20", request["to-hit"]].join(" "));
     let format_nth_damage = (damages, damage_types, n) => macro(damages[n]) + " " + damage_types[n];
-    let get_damage = (request, n) => (request["damages"] || []).length === 0 ? ""
-        : format_nth_damage(request["damages"], request["damage-types"], n || 0);
-    let get_critical_damage = (request, n) => (request["critical-damages"] || []).length === 0 ? ""
-        : "Additional " + format_nth_damage(request["critical-damages"], request["critical-damage-types"], n || 0);
-
-    let get_auxiliary_damage = (request) => request.damages.slice(1)
-        .map((v, i) => format_nth_damage(request["damages"], request["damage-types"], i+1))
+    let get_all_damages = (request) => (request["damages"] || [])
+        .map((el, i) => format_nth_damage(request["damages"], request["damage-types"], i))
         .join(", ");
+    let get_all_crit_damages = (request) => (request["critical-damages"] || [])
+        .map((el, i) => format_nth_damage(request["critical-damages"], request["critical-damage-types"], i))
+        .join(", ");
+    let get_auxiliary_damage = (request) => request.damages.slice(1)
+        .map((v, i) => format_nth_damage(request["damages"], request["damage-types"], i+1));
 
     let get_check_segments = (request) => {
         let roll_attrs = {
@@ -2885,8 +2885,8 @@ function template5eCommunity(request, name, properties) {
         if (request["type"] !== "attack") return [];
         return [
             "simple", "weapon", "showadvroll", ["rollname", "Attack"],
-            ["weapondamage", get_damage(request)],
-            ["weaponcritdamage", get_critical_damage(request)]
+            ["weapondamage", get_all_damages(request)],
+            ["weaponcritdamage", get_all_crit_damages(request)]
         ].concat(get_adv_roll_segments(get_attack_roll(request)));
     };
     let get_spell_segments = (request) => {
@@ -2910,17 +2910,20 @@ function template5eCommunity(request, name, properties) {
             if (request["damage-types"][0] === "Healing") {
                 return ["spellshowhealing", ["spellhealing", macro(request["damages"][0])]];
             } else {
-                return ["spellshowdamage", ["spelldamage", get_damage(request)]];
+                return ["spellshowdamage", ["spelldamage", get_all_damages(request)]];
             }
         }
         let get_spell_critical_damage = (request) => (request["critical-damages"] === undefined ? []
-            : ["spellcancrit",    ["spellcritdamage", get_critical_damage(request)]]);
+            : ["spellcancrit",    ["spellcritdamage", get_all_crit_damages(request)]]);
         let get_spell_effect = (request) => {
             if (request["damages"] === undefined) {
                 return ["spellshoweffects", ["spelleffect", description]];
             } else {
-                let additional_damage = (request["damages"].length <= 1) ? ""
-                    : "Additional effect: " + get_auxiliary_damage(request);
+                let additional_damage = "";
+                if (request["damage-types"][0] === "Healing") {
+                    additional_damage = (request["damages"].length <= 1) ? ""
+                        : "Additional effect: " + get_auxiliary_damage(request);
+                }
                 let additional_description = show_damage_description ? description : "";
                 let effect = [additional_damage, additional_description].join("\n").trim();
                 return effect.length === 0 ? [] : ["spellshoweffects", ["spelleffect", effect]];
