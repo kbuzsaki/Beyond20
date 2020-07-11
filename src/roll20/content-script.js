@@ -231,6 +231,7 @@ function template5eCommunity(request, name, properties) {
 
     let macro = (el) => "[[" + el + "]]";
     let get_adv_roll_segments = (roll) => [["roll1", roll], ["roll2", roll]];
+    let get_adv_attack_segments = (roll) => [["attack", roll], ["attackadv", roll]];
 
     let get_roll = (request) => macro(request["roll"]);
     let get_attack_roll = (request) => macro(["1d20", request["to-hit"]].join(" "));
@@ -279,17 +280,23 @@ function template5eCommunity(request, name, properties) {
     // TODO: handle versatile weapons
     let get_attack_segments = (request) => {
         if (request["type"] !== "attack") return [];
+        // Special handling to use the regular weapon template for character basic attacks
+        if (request["to-hit"] !== undefined && request["character"]["type"] === "Character") {
+            return [
+                "simple", "weapon", "showadvroll", ["rollname", "Attack"],
+                ["weapondamage", get_all_damages(request)],
+                ["weaponcritdamage", get_all_crit_damages(request)]
+            ].concat(get_adv_roll_segments(get_attack_roll(request)));
+        }
+
+        let get_to_hit = (request) => (request["to-hit"] === undefined ? [] :
+            get_adv_attack_segments(get_attack_roll(request)));
         let get_save_text = (request) => (request["save-dc"] === undefined ? [] :
             [["freetext", ["DC", macro(request["save-dc"]), request["save-ability"], "save"].join(" ")]]);
 
-        if (request["to-hit"] === undefined) {
-            return ["weapon", ["damage", get_all_damages(request)]].concat(get_save_text(request));
-        }
-        return [
-            "simple", "weapon", "showadvroll", ["rollname", "Attack"],
-            ["weapondamage", get_all_damages(request)],
-            ["weaponcritdamage", get_all_crit_damages(request)]
-        ].concat(get_adv_roll_segments(get_attack_roll(request)));
+        return ["weapon", ["damage", get_all_damages(request)], ["critdamage", get_all_crit_damages(request)]]
+            .concat(get_to_hit(request))
+            .concat(get_save_text(request));
     };
     let get_spell_segments = (request) => {
         if (!["spell-attack", "spell-card"].includes(request["type"])) return [];
