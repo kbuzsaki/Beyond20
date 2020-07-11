@@ -2798,10 +2798,16 @@ function template5eCommunity(request, name, properties) {
             case "initiative": return "Initiative";
             case "hit-dice": return "Spending Hit Dice - " + request["roll"].split("+")[0];
             case "death-save": return "Death Save";
-            default: return request["name"];
+            case "attack":
+            case "spell-attack":
+            case "spell-card":
+                if (request["whisper"] === WhisperType.HIDE_NAMES) return "???";
+            default:
+                return request["name"];
         }
     };
     let get_name = (request) => {
+        if (request["whisper"] === WhisperType.HIDE_NAMES) return "???";
         if (request.character.name !== undefined && request.character.name !== null) {
             return request.character.name;
         }
