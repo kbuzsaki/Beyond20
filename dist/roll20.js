@@ -2839,6 +2839,8 @@ function template5eCommunity(request, name, properties) {
         ].filter((el) => { return el !== "" }).join(" ");
     };
 
+    let remove_titlecase = (s) => (s && s.length > 0) ? s[0].toLowerCase() + s.substr(1) : "";
+
     let macro = (el) => "[[" + el + "]]";
     let get_adv_roll_segments = (roll) => [["roll1", roll], ["roll2", roll]];
     let get_adv_attack_segments = (roll) => [["attack", roll], ["attackadv", roll]];
@@ -2900,12 +2902,39 @@ function template5eCommunity(request, name, properties) {
 
         let get_to_hit = (request) => (request["to-hit"] === undefined ? [] :
             get_adv_attack_segments(get_attack_roll(request)));
-        let get_save_text = (request) => (request["save-dc"] === undefined ? [] :
-            [["freetext", ["DC", macro(request["save-dc"]), request["save-ability"], "save"].join(" ")]]);
+        let get_attack_description = (request) => {
+            // Don't include description text for monsters until there's a spoiler setting
+            if (request["character"]["type"] === "Monster") return [];
+
+            let format_description = (desc) => desc.trim().replace(/DC (\d+)/, "DC [[$1]]");
+
+            // Check whether this is an attack with an on-hit effect
+            let matcher = /Hit:[^\.]+damage(, and|,|\.)(.*)/;
+            let matches = description.match(matcher);
+            // TODO: fix erroneous matches like a hobgoblin's versatile longsword
+            if (matches && matches.length > 2 && matches[2].trim() !== "") {
+                let effect = remove_titlecase(format_description(matches[2]));
+                return [["freetext", "On hit, " + effect]];
+            }
+
+            // Check whether this is a supplemental effect (e.g. a Boar's charge)
+            if (description !== "" && !description.match(/Hit:/)) {
+                // Strip off the embedded attack name.
+                let effect = description.replace(new RegExp("^" + request["name"] + "\."), "").trim();
+                return [["freetext", format_description(effect)]];
+            }
+
+            // If there's a save DC without description text, fall back to just displaying that.
+            if (request["save-dc"] !== undefined) {
+                return [["freetext", ["DC", macro(request["save-dc"]), request["save-ability"], "save"].join(" ")]];
+            }
+
+            return [];
+        };
 
         return ["weapon", ["damage", get_all_damages(request)], ["critdamage", get_all_crit_damages(request)]]
             .concat(get_to_hit(request))
-            .concat(get_save_text(request));
+            .concat(get_attack_description(request));
     };
     let get_spell_segments = (request) => {
         if (!["spell-attack", "spell-card"].includes(request["type"])) return [];
@@ -2957,7 +2986,6 @@ function template5eCommunity(request, name, properties) {
 
             let normalize_ft = (dist) => dist.replace("ft", "ft.").replace("ft..", "ft.");
             let format_titlecase = (s) => (s && s.length > 0) ? s[0].toUpperCase() + s.substr(1).toLowerCase() : "";
-            let remove_titlecase = (s) => (s && s.length > 0) ? s[0].toLowerCase() + s.substr(1) : "";
 
             // ignore the specific material components
             let components = request["components"].split("(")[0].trim();
