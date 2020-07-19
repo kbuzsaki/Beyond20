@@ -20,7 +20,7 @@ async function rollSkillCheck(paneClass) {
     let modifier = $("." + paneClass + "__header-modifier").text();
     const proficiency = $("." + paneClass + "__header-icon .ct-tooltip,." + paneClass + "__header-icon .ddbc-tooltip").attr("data-original-title");
 
-    
+
     if (ability == "--" && character._abilities.length > 0) {
         let prof = "";
         let prof_val = "";
@@ -91,11 +91,11 @@ async function rollSkillCheck(paneClass) {
     // Set Silver Tongue if Deception or Persuasion
     if (character.hasClassFeature("Silver Tongue") && (skill_name === "Deception" || skill_name === "Persuasion"))
         roll_properties.d20 = "1d20min10";
-    
+
     // Sorcerer: Clockwork Soul - Trance of Order
     if (character.hasClassFeature("Trance of Order") && character.getSetting("sorcerer-trance-of-order", false))
             roll_properties.d20 = "1d20min10";
-    
+
     // Fey Wanderer Ranger - Otherworldly Glamour
     if (character.hasClassFeature("Otherworldly Glamour") && ability == "CHA") {
         modifier = parseInt(modifier) + Math.max(character.getAbility("WIS").mod,1);
@@ -122,6 +122,7 @@ function rollAbilityOrSavingThrow(paneClass, rollType) {
     const ability = ability_abbreviations[ability_name];
     let modifier = $("." + paneClass + "__modifier .ct-signed-number,." + paneClass + "__modifier .ddbc-signed-number").text();
 
+    let proficiency = undefined;
     if (rollType == "ability") {
         // Remarkable Athelete and Jack of All Trades don't stack, we give priority to RA instead of JoaT because
         // it's rounded up instead of rounded down.
@@ -130,17 +131,23 @@ function rollAbilityOrSavingThrow(paneClass, rollType) {
             const remarkable_athlete_mod = Math.ceil(character._proficiency / 2);
             modifier = parseInt(modifier) + remarkable_athlete_mod;
             modifier = modifier >= 0 ? `+${modifier}` : `-${modifier}`;
+            proficiency = "Remarkable Athlete";
         } else if (character.hasClassFeature("Jack of All Trades") && character.getSetting("bard-joat", false)) {
             const JoaT = Math.floor(character._proficiency / 2);
             modifier = parseInt(modifier) + JoaT;
             modifier = modifier >= 0 ? `+${modifier}` : `-${modifier}`;
+            proficiency = "Jack of All Trades";
         }
+    }
+    if (rollType == "saving-throw") {
+        proficiency = $(".ddbc-saving-throws-summary__ability--" + ability.toLowerCase() + " .ddbc-saving-throws-summary__ability-proficiency .ddbc-tooltip").attr("data-original-title");
     }
 
     const roll_properties = {
         "name": ability_name,
         "ability": ability,
-        "modifier": modifier
+        "modifier": modifier,
+        "proficiency": proficiency
     }
 
     if (ability == "STR" &&
@@ -191,6 +198,12 @@ function rollInitiative() {
         initiative = $(".ct-combat-mobile__extra--initiative .ct-combat-mobile__extra-value").text();
         advantage = $(".ct-combat-mobile__advantage").length > 0;
     }
+    // Jack of All Trades is already included in the initiative modifier, but also display the proficiency text
+    let proficiency = undefined;
+    if (character.hasClassFeature("Jack of All Trades")) {
+        proficiency = "Jack of All Trades";
+    }
+
     //console.log("Initiative " + ("with" if (advantage else "without") + " advantage ) { " + initiative);
 
     if (character.getGlobalSetting("initiative-tiebreaker", false)) {
@@ -204,7 +217,7 @@ function rollInitiative() {
         initiative = initiative >= 0 ? '+' + initiative.toFixed(2) : initiative.toFixed(2);
     }
 
-    const roll_properties = { "initiative": initiative }
+    const roll_properties = { "initiative": initiative, "proficiency": proficiency }
     if (advantage)
         roll_properties["advantage"] = RollType.OVERRIDE_ADVANTAGE;
     return sendRollWithCharacter("initiative", "1d20" + initiative, roll_properties);
@@ -315,7 +328,7 @@ function rollItem(force_display = false, force_to_hit_only = false, force_damage
         // If clicking on a spell group within a item (Green flame blade, Booming blade), then add the additional damages from that spell
         if (spell_group) {
             const group_name = $(spell_group).find(".ct-item-detail__spell-damage-group-name").text();
-            
+
             const spell_damages = $(spell_group).find(".ct-item-detail__spell-damage-group-item");
             for (let j = 0; j < spell_damages.length; j++) {
                 let dmg = spell_damages.eq(j).find(".ddbc-damage__value").text();
@@ -363,7 +376,7 @@ function rollItem(force_display = false, force_to_hit_only = false, force_damage
             damages.push(`1d6+${Math.floor(barbarian_level / 2)}`);
             damage_types.push("Divine Fury");
         }
-        if (to_hit !== null && 
+        if (to_hit !== null &&
             character.getSetting("sharpshooter", false) &&
             character.hasFeat("Sharpshooter") &&
             properties["Attack Type"] == "Ranged" &&
@@ -373,7 +386,7 @@ function rollItem(force_display = false, force_to_hit_only = false, force_damage
             damage_types.push("Sharpshooter");
             character.mergeCharacterSettings({ "sharpshooter": false });
         }
-        if (to_hit !== null && 
+        if (to_hit !== null &&
             character.getSetting("great-weapon-master", false) &&
             character.hasFeat("Great Weapon Master") &&
             properties["Attack Type"] == "Melee" &&
@@ -384,12 +397,12 @@ function rollItem(force_display = false, force_to_hit_only = false, force_damage
             damage_types.push("Weapon Master");
             character.mergeCharacterSettings({ "great-weapon-master": false });
         }
-        if (to_hit !== null && 
+        if (to_hit !== null &&
             character.getSetting("paladin-sacred-weapon", false)) {
             const charisma_attack_mod =  Math.max(character.getAbility("CHA").mod, 1);
             to_hit += "+" + charisma_attack_mod;
         }
-        if (to_hit !== null && 
+        if (to_hit !== null &&
             character.getSetting("eldritch-invocation-lifedrinker", false) &&
             item_customizations.includes("Pact Weapon")) {
             const charisma_damage_mod =  Math.max(character.getAbility("CHA").mod, 1);
@@ -724,7 +737,7 @@ function rollAction(paneClass, force_to_hit_only = false, force_damages_only = f
         if (action_name.includes("Polearm Master - Bonus Attack") && character.hasClassFeature("Fighting Style: Great Weapon Fighting")) {
             damages[0] = damages[0].replace(/[0-9]*d[0-9]+/g, "$&ro<=2");
         }
-        if (to_hit !== null && 
+        if (to_hit !== null &&
             character.getSetting("great-weapon-master", false) &&
             action_name.includes("Polearm Master - Bonus Attack")) {
             to_hit += " - 5";
@@ -894,7 +907,13 @@ function rollSpell(force_display = false, force_to_hit_only = false, force_damag
     } else {
         concentration = false;
     }
-    let to_hit = properties["To Hit"] !== undefined && properties["To Hit"] !== "--" ? properties["To Hit"] : null;;
+    let area_shape = undefined;
+    let area_element = $(".ct-spell-pane i.ct-spell-detail__range-icon");
+    if (area_element.length !== 0) {
+        area_shape = area_element[0].classList[1].split("-aoe-")[1];
+    }
+    let gained_from = $(".ct-spell-pane .ct-sidebar__header-parent").text();
+    let to_hit = properties["To Hit"] !== undefined && properties["To Hit"] !== "--" ? properties["To Hit"] : null;
 
     if (to_hit === null)
         to_hit = findToHit(spell_full_name, ".ct-combat-attack--spell,.ddbc-combat-attack--spell", ".ct-spell-name,.ddbc-spell-name", ".ct-combat-attack__tohit,.ddbc-combat-attack__tohit");
@@ -957,7 +976,7 @@ function rollSpell(force_display = false, force_to_hit_only = false, force_damag
                 }
             }
         }
-        
+
         //Cleric Blessed Strikes
         if (character.hasClassFeature("Blessed Strikes") &&
             character.getSetting("cleric-blessed-strikes", false) &&
@@ -1045,7 +1064,7 @@ function rollSpell(force_display = false, force_to_hit_only = false, force_damag
                 }
             }
         }
-        
+
         if (character.hasClassFeature("Enhanced Bond") &&
             character.getSetting("wildfire-spirit-enhanced-bond", false)) {
             for (let i = 0; i < damages.length; i++){
@@ -1135,7 +1154,9 @@ function rollSpell(force_display = false, force_to_hit_only = false, force_damag
         }
 
         const spell_properties = {
+            "gained-from": gained_from,
             "level-school": level,
+            "aoe-shape": (area_shape || ""),
             "concentration": concentration,
             "duration": duration,
             "casting-time": properties["Casting Time"] || "",
@@ -1161,10 +1182,13 @@ function rollSpell(force_display = false, force_to_hit_only = false, force_damag
 
         return sendRollWithCharacter("spell-attack", damages[0] || "", roll_properties);
     } else {
-        const roll_properties = {
+        const roll_properties = buildAttackRoll(character, "spell", spell_name, description, properties);
+        const spell_properties = {
             "name": spell_name,
+            "gained-from": gained_from,
             "level-school": level,
             "range": (properties["Range/Area"] || ""),
+            "aoe-shape": (area_shape || ""),
             "concentration": concentration,
             "duration": duration,
             "casting-time": (properties["Casting Time"] || ""),
@@ -1172,6 +1196,8 @@ function rollSpell(force_display = false, force_to_hit_only = false, force_damag
             "ritual": ritual,
             "description": description
         }
+        for (let key in spell_properties)
+            roll_properties[key] = spell_properties[key];
         if (castas != "" && !level.startsWith(castas))
             roll_properties["cast-at"] = castas;
         return sendRollWithCharacter("spell-card", 0, roll_properties);
@@ -1273,7 +1299,7 @@ function handleCustomText(paneClass) {
             // Ignore errors that might be caused by DOTALL regexp flag not being supported by the browser
         }
     }
-    
+
     return customRolls;
 }
 
@@ -1287,7 +1313,7 @@ async function execute(paneClass, {force_to_hit_only = false, force_damages_only
             });
         }
      };
-     
+
     const customTextRolls = handleCustomText(paneClass);
     await rollCustomText(customTextRolls.before);
     if (customTextRolls.replace.length > 0) {
@@ -1989,7 +2015,7 @@ function documentModified(mutations, observer) {
     if (customRoll) {
         dndbeyondDiceRoller.sendCustomDigitalDice(character, customRoll);
     }
-    
+
     const pane = $(".ct-sidebar__pane-content > div");
     if (pane.length > 0) {
         for (let div = 0; div < pane.length; div++) {
