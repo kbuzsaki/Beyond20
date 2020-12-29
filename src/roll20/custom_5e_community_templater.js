@@ -68,7 +68,7 @@ var Custom5eCommunityTemplater = (function(){
         let trimmed = desc.trim();
         let result = trimmed.replace(/DC (\d+)/g, "DC [[$1]]");
         return {
-            "result": "result",
+            "result": result,
             "found_match": (result != trimmed)
         };
     }
@@ -296,23 +296,26 @@ var Custom5eCommunityTemplater = (function(){
 
         let description = this.description();
 
+        var format_result = {};
+
         // Check whether this is an attack with an on-hit effect
         let matcher = /Hit:[^\.D]+damage(, and|,|\.)(.*)/;
         let matches = description.match(matcher);
         // TODO: fix erroneous matches like a hobgoblin's versatile longsword
         if (matches && matches.length > 2 && matches[2].trim() !== "") {
-            return "On hit, " + removeTitlecase(formatDcs(matches[2]).result);
-        }
-
+            format_result = formatDcs("On hit, " + removeTitlecase(matches[2]));
         // Check whether this is a supplemental effect (e.g. a Boar's charge)
-        if (description !== "" && !description.match(/Hit:/)) {
+        } else if (description !== "" && !description.match(/Hit:/)) {
             // Strip off the embedded attack name.
-            return formatDcs(stripPrefix(description, this._request["name"] + ".").trim()).result;
+            format_result = formatDcs(stripPrefix(description, this._request["name"] + ".").trim());
         }
 
-        // If there's a save DC without description text, fall back to just displaying that.
-        if (this.save_dc() !== "") {
-            return ["DC", macro(this.save_dc()), this.save_ability(), "save"].join(" ");
+        if (format_result.found_match) {
+            return format_result.result;
+        // If there's a save DC that we couldn't find in the description text, fall back to just displaying that.
+        } else if (this.save_dc() !== "") {
+            let dc_text = ["DC", macro(this.save_dc()), this.save_ability(), "save."].join(" ");
+            return dc_text + "\n" + (format_result.result || "");
         }
 
         return "";
@@ -426,6 +429,8 @@ var Custom5eCommunityTemplater = (function(){
             let description = request.getAttackDescription();
 
             // Special handling to use the regular weapon template for character basic attacks
+            // TODO: consider also bailing out if there's description text to display?
+            // For cases where there is both an attack and a save DC
             if (attack_roll && request.character().type === "Character") {
                 return ["simple", "weapon", "showadvroll", ["rollname", "Attack"], ["roll1", attack_roll],
                         ["roll2", attack_roll], ["weapondamage", damage], ["weaponcritdamage", crit_damage]];
