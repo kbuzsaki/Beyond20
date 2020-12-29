@@ -3122,7 +3122,12 @@ var Custom5eCommunityTemplater = (function(){
     }
 
     function formatDcs(desc) {
-        return desc.trim().replace(/DC (\d+)/g, "DC [[$1]]");
+        let trimmed = desc.trim();
+        let result = trimmed.replace(/DC (\d+)/g, "DC [[$1]]");
+        return {
+            "result": "result",
+            "changed": (result != trimmed)
+        };
     }
 
     function _buildDamages(values, types) {
@@ -3353,13 +3358,13 @@ var Custom5eCommunityTemplater = (function(){
         let matches = description.match(matcher);
         // TODO: fix erroneous matches like a hobgoblin's versatile longsword
         if (matches && matches.length > 2 && matches[2].trim() !== "") {
-            return "On hit, " + removeTitlecase(formatDcs(matches[2]));
+            return "On hit, " + removeTitlecase(formatDcs(matches[2]).result);
         }
 
         // Check whether this is a supplemental effect (e.g. a Boar's charge)
         if (description !== "" && !description.match(/Hit:/)) {
             // Strip off the embedded attack name.
-            return formatDcs(stripPrefix(description, this._request["name"] + ".").trim());
+            return formatDcs(stripPrefix(description, this._request["name"] + ".").trim()).result;
         }
 
         // If there's a save DC without description text, fall back to just displaying that.
