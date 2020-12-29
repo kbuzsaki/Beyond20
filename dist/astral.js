@@ -220,6 +220,9 @@ const options_list = {
         "default": WhisperType.NO,
         "choices": {
             [WhisperType.NO.toString()]: "Never whisper",
+            [WhisperType.HIDE_NAMES.toString()]: "Hide character and attack name",
+            [WhisperType.HIDE_CREATURE_NAMES.toString()]: "Hide character name only",
+            [WhisperType.HIDE_ACTION_NAMES.toString()]: "Hide attack name only",
             [WhisperType.YES.toString()]: "Always whisper",
             [WhisperType.QUERY.toString()]: "Ask every time"
         }
