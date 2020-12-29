@@ -21,11 +21,12 @@ var Custom5eCommunityTemplater = (function(){
     }
 
     function lookupHardcodedSaveSuccess(name) {
-        let kNoDamageSpells = ["Frostbite", "Sacred Flame"];
+        let kNoDamageSpells = ["Disintegrate", "Frostbite", "Sacred Flame"];
         let kHalfDamageSpells = ["Spirit Guardians"];
         let kNoEffectSpells = [
-            "Bane", "Command", "Entangle", "Faerie Fire", "Hypnotic Pattern", "Levitate",
-            "Light", "Polymorph"];
+            "Bane", "Banishment", "Command", "Entangle", "Faerie Fire", "Hold Monster", "Hold Person",
+            "Hypnotic Pattern", "Levitate", "Light", "Mind Sliver", "Otiluke’s Resilient Sphere",
+            "Polymorph", "Sickening Radiance"];
 
         if (kNoDamageSpells.includes(name)) return "No damage.";
         if (kHalfDamageSpells.includes(name)) return "Half as much damage.";
@@ -33,11 +34,13 @@ var Custom5eCommunityTemplater = (function(){
 
         return {
             "Detect Thoughts": "The spell ends (if you were trying to probe deeper into the creature's thoughts).",
+            "Grease": "The creature does not fall prone.",
             "Heat Metal": "The creature isn't forced to drop the object.",
             "Ice Knife": "No cold damage.",
             "Sanctuary": "A hostile creature may attack the target.",
             "Sleet Storm": "The creature does not fall prone.",
-            "Thunderwave": "Half damage and no knockback."
+            "Thunderwave": "Half damage and no knockback.",
+            "Web": "The creature is not restrained by the webs."
         }[name] || "";
     }
 
