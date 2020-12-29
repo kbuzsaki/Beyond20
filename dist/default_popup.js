@@ -433,6 +433,14 @@ const options_list = {
         "default": true,
     },
 
+    "roll20-infer-subfeature-description": {
+        "short": "Roll20 Infer Subfeature Description",
+        "title": "Roll20 Subfeature Description Inference",
+        "description": "Whether to attempt to infer which portion of the description text is relevant to a specific subfeature. This avoids printing large blocks of irrelevant description, but may have bugs that erroneously exclude description text.\n",
+        "type": "bool",
+        "default": false,
+    },
+
     "notes-to-vtt": {
         "title": "Send custom text to the VTT",
         "description": "In the \"Notes\" or \"Description\" section of any item, action, or spell on the D&D Beyond Character Sheet, "

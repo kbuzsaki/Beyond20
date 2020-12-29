@@ -432,6 +432,14 @@ const options_list = {
         "default": true,
     },
 
+    "roll20-infer-subfeature-description": {
+        "short": "Roll20 Infer Subfeature Description",
+        "title": "Roll20 Subfeature Description Inference",
+        "description": "Whether to attempt to infer which portion of the description text is relevant to a specific subfeature. This avoids printing large blocks of irrelevant description, but may have bugs that erroneously exclude description text.\n",
+        "type": "bool",
+        "default": false,
+    },
+
     "notes-to-vtt": {
         "title": "Send custom text to the VTT",
         "description": "In the \"Notes\" or \"Description\" section of any item, action, or spell on the D&D Beyond Character Sheet, "
@@ -3176,6 +3184,18 @@ var Custom5eCommunityTemplater = (function(){
         return damages.length >= 1 && damages[0].type === "Healing";
     };
 
+    CustomRequest.prototype.name = function() { return this._request["name"] || ""; };
+
+    // Strips prefixes on the action name, e.g. "Psionic Power: Psionic Strike" -> "Psionic Strike"
+    CustomRequest.prototype.stripped_feature_name = function() {
+        let name_components = this.name().split(":");
+        for (let i = name_components.length - 1; i >= 0; i--) {
+            let component = name_components[i].trim();
+            if (component !== "") return component;
+        }
+        return this.name();
+    };
+
     CustomRequest.prototype.save_dc = function() { return this._request["save-dc"] || ""; };
 
     CustomRequest.prototype.save_ability = function() { return this._request["save-ability"] || ""; };
@@ -3197,6 +3217,10 @@ var Custom5eCommunityTemplater = (function(){
             case "never": return false;
         }
         return false;
+    };
+
+    CustomRequest.prototype.inferSubfeatureDescription = function() {
+        return settings["roll20-infer-subfeature-description"];
     };
 
     CustomRequest.prototype.showMonsterAttackEffects = function() {
@@ -3321,6 +3345,24 @@ var Custom5eCommunityTemplater = (function(){
                 description = description.substr(0, matches.index) + matches[0] + calculation +
                     description.substr(matches.index + matches[0].length);
                 break;
+            }
+        }
+
+        if (this.inferSubfeatureDescription()) {
+            let feature_name = this.stripped_feature_name();
+
+            // Check for the subfeature name in the body of the description. There are two formats:
+            // - the subfeature name on a separate line, followed by the description
+            // - the subfeature name, a period, and then the description
+            let description_lines = description.split("\n");
+            console.log(description_lines);
+            for (let i = 0; i < description_lines.length; i++) {
+                let line = description_lines[i];
+                if (line === feature_name) {
+                    return description_lines[i+1];
+                } else if (line.startsWith(feature_name)) {
+                    return stripPrefix(line, feature_name + ".").trim();
+                }
             }
         }
 
