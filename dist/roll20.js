@@ -3126,7 +3126,7 @@ var Custom5eCommunityTemplater = (function(){
         let result = trimmed.replace(/DC (\d+)/g, "DC [[$1]]");
         return {
             "result": "result",
-            "changed": (result != trimmed)
+            "found_match": (result != trimmed)
         };
     }
 
