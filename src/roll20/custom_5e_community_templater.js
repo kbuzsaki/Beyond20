@@ -32,6 +32,7 @@ var Custom5eCommunityTemplater = (function(){
         if (kNoEffectSpells.includes(name)) return "No effect.";
 
         return {
+            "Detect Thoughts": "The spell ends (if you were trying to probe deeper into the creature's thoughts).",
             "Heat Metal": "The creature isn't forced to drop the object.",
             "Ice Knife": "No cold damage.",
             "Sanctuary": "A hostile creature may attack the target.",
